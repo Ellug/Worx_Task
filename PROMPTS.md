@@ -153,10 +153,8 @@ PROMPTS.md, DECISIONS.md 를 repo 최상단에 배치할거야
 - 상태 관리: Board(client component)가 candidates 배열을 useState로 소유, page.tsx(Server Component)는 초기 데이터만 store에서 직접 읽어 전달
 - 낙관적 업데이트: 드롭 즉시 로컬 state 변경 → PATCH 요청 → 실패 시 이동 전 단계로 롤백 + ErrorToast로 대상자 이름과 실패 사실 안내(자동 닫힘/수동 닫기 모두 지원)
 - 이동 중인 카드는 draggable 비활성화 + "저장 중…" 표시로 같은 카드 중복 드래그 방지
-- `npm run lint`·`tsc --noEmit` 통과 확인, Playwright로 (1) 정상 이동 후 새로고침해도 유지되는지, (2) API를 강제로 500 응답하도록 가로채 롤백과 에러 토스트 문구가 정확히 뜨는지 직접 검증
+- `npm run lint`·`tsc --noEmit` 통과 확인, 정상 이동 후 새로고침해도 유지되는지 검증 완료.
 
 ### 리뷰 / 검증
-- 무엇이 문제였나: 최초 구현에서 mock 저장소를 일반 모듈 스코프 변수로 관리했더니, dev 서버(Turbopack)가 API 라우트와 page.tsx를 서로 다른 모듈 인스턴스로 번들링해 PATCH로 저장한 값이 새로고침 후 사라짐
-- 어떻게 알아챘나: Playwright로 "드래그 후 새로고침" 시나리오를 직접 재현하다가 카드가 원래 컬럼으로 되돌아가는 것을 발견, curl로 PATCH 응답(200)과 그 다음 페이지 로드 결과를 비교해 저장소가 공유되지 않는다는 것을 확인
-- 그대로 채택 / 수정 / 기각: 수정 — candidate-store를 `globalThis` 기반 싱글톤으로 변경(Prisma 클라이언트의 HMR 우회 패턴과 동일)
-- 수정했다면 어떻게 고쳤나: `src/lib/server/candidate-store.ts`에서 `globalThis.__candidateStore`에 배열을 보관하도록 변경 후 재검증, PATCH → 새로고침에도 유지되는 것 확인
+- 정상 작동 확인.
+- 현재 md 문서에 지나치게 불필요한 정보를 클로드가 직접 작성하는 이슈가 확인 됨. 하지만 남은 시간을 고려해 이 이상 컨벤션을 수정하지 않고 우선 기능 개발 속행.
