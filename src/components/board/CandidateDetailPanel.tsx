@@ -102,6 +102,45 @@ export function CandidateDetailPanel({
           </div>
           <div>
             <dt className="text-xs font-medium text-zinc-400 dark:text-zinc-600">
+              학력
+            </dt>
+            <dd className="mt-1 text-zinc-700 dark:text-zinc-300">
+              {candidate.education}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-xs font-medium text-zinc-400 dark:text-zinc-600">
+              경력
+            </dt>
+            <dd className="mt-1 text-zinc-700 dark:text-zinc-300">
+              {candidate.experience}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-xs font-medium text-zinc-400 dark:text-zinc-600">
+              자기소개서
+            </dt>
+            <dd className="mt-1 leading-relaxed text-zinc-700 dark:text-zinc-300">
+              {candidate.coverLetter}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-xs font-medium text-zinc-400 dark:text-zinc-600">
+              이력서
+            </dt>
+            <dd className="mt-1">
+              <a
+                href={candidate.resumeUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm font-medium text-blue-600 underline underline-offset-2 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+              >
+                이력서 보기 ↗
+              </a>
+            </dd>
+          </div>
+          <div>
+            <dt className="text-xs font-medium text-zinc-400 dark:text-zinc-600">
               메모
             </dt>
             <dd className="mt-1 leading-relaxed text-zinc-700 dark:text-zinc-300">

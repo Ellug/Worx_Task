@@ -197,3 +197,17 @@ PROMPTS.md, DECISIONS.md 를 repo 최상단에 배치할거야
 - `npm run lint`·`tsc --noEmit` 통과 확인, Playwright로 (1) 카드 클릭 시 상세 필드 정상 표시, (2) 패널 열린 상태에서 다른 카드 위치 클릭 시 백드롭이 가로채 카드 조작이 막히고 패널이 닫히는 것, (3) Esc, (4) X 버튼, (5) 빈 영역 클릭 총 4가지 닫기 경로를 각각 직접 검증
 
 ### 리뷰 / 검증
+
+## [candidate-detail] 지원자 상세 컬럼 추가 (이력서/자기소개서/학력/경력)
+
+### 프롬프트 1 (CLAUDE CODE)
+> 지원자 상세에
+> 이력서, 자기소개서, 학력, 경력, 같은 일반적인 컬럼들을 추가해줘
+
+### AI 출력 요지
+- `Candidate` 타입에 `education`(학력), `experience`(경력), `coverLetter`(자기소개서), `resumeUrl`(이력서 링크) 필드 추가, 시드 데이터 6건에 각각 값 채움
+- `CandidateDetailPanel`에 학력/경력/자기소개서/이력서 항목을 연락처 다음, 메모 이전 순서로 추가. 이력서는 새 탭에서 열리는 링크(`이력서 보기 ↗`)로 표시 (실제 파일 서빙은 없으므로 example.com 목업 URL 사용)
+- 데이터 스키마가 또 바뀌어 dev 서버의 mock 저장소(globalThis 싱글톤)가 이전 스키마를 캐싱하고 있던 것을 재기동으로 반영
+- `npm run lint`·`tsc --noEmit` 통과 확인, Playwright로 패널 내 필드 라벨 순서(현재 단계/지원일/이메일/연락처/학력/경력/자기소개서/이력서/메모)와 이력서 링크의 href·target 속성을 직접 검증
+
+### 리뷰 / 검증
