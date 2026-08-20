@@ -1,36 +1,30 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 채용 파이프라인 보드
 
-## Getting Started
+채용 담당자가 지원자를 채용 단계별로 관리하는 보드입니다.
+단계는 `서류검토 - 면접 - 처우협의 - 최종합격 / 불합격` 순이며, 지원자 카드를 단계 간 이동하며 관리합니다.
+실제 백엔드는 없고, mock API(또는 로컬 mock 서버)를 통해 데이터를 읽고 씁니다.
 
-First, run the development server:
+## 스택
+
+- Next.js (App Router) / React / TypeScript
+- Tailwind CSS
+- Mock API 방식: 결정 예정 -> [DECISIONS.md](./DECISIONS.md) 참고
+
+## 설치 및 실행
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+[http://localhost:3000](http://localhost:3000) 에서 확인합니다.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 배포
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+(추후 배포 링크 추가 예정)
 
-## Learn More
+## 프로젝트 문서
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- [CONVENTION.md](./CONVENTION.md): 커밋 메시지 규칙 및 작업 진행 방식
+- [PROMPTS.md](./PROMPTS.md): 기능 단위 AI 프롬프트와 리뷰/검증 기록
+- [DECISIONS.md](./DECISIONS.md): 설계 결정 기록
