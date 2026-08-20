@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Candidate } from "@/lib/candidates";
 import { STAGES, type StageId } from "@/lib/stages";
 import { useCandidateFilter } from "@/hooks/useCandidateFilter";
@@ -10,17 +10,48 @@ import { Column } from "./Column";
 import { ErrorToast } from "./ErrorToast";
 import { FilterBar } from "./FilterBar";
 
-interface BoardProps {
-  initialCandidates: Candidate[];
-}
-
-export function Board({ initialCandidates }: BoardProps) {
-  const [candidates, setCandidates] = useState(initialCandidates);
+export function Board() {
+  const [candidates, setCandidates] = useState<Candidate[]>([]);
+  const [isLoadingList, setIsLoadingList] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
   const [movingId, setMovingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selectedCandidateId, setSelectedCandidateId] = useState<
     string | null
   >(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    fetch("/api/candidates")
+      .then((response) => {
+        if (!response.ok) throw new Error("지원자 목록 조회 실패");
+        return response.json() as Promise<Candidate[]>;
+      })
+      .then((data) => {
+        if (cancelled) return;
+        setCandidates(data);
+        setLoadError(null);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setLoadError("지원자 목록을 불러오지 못했습니다. 다시 시도해주세요.");
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoadingList(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [reloadKey]);
+
+  const retryLoad = useCallback(() => {
+    setIsLoadingList(true);
+    setLoadError(null);
+    setReloadKey((key) => key + 1);
+  }, []);
 
   const {
     nameQuery,
@@ -79,6 +110,29 @@ export function Board({ initialCandidates }: BoardProps) {
     },
     [candidates],
   );
+
+  if (isLoadingList) {
+    return (
+      <div className="flex h-full items-center justify-center text-sm text-zinc-400 dark:text-zinc-600">
+        지원자 목록을 불러오는 중…
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center gap-3 text-sm text-zinc-500 dark:text-zinc-400">
+        <p>{loadError}</p>
+        <button
+          type="button"
+          onClick={retryLoad}
+          className="rounded-md border border-zinc-300 px-3 py-1.5 text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+        >
+          다시 시도
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-full flex-col">

@@ -1,5 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { updateCandidateStage } from "@/lib/server/candidate-store";
+import {
+  shouldSimulateFailure,
+  simulateNetworkDelay,
+} from "@/lib/server/simulate-network";
 import { isStageId } from "@/lib/stages";
 
 export async function PATCH(
@@ -14,6 +18,15 @@ export async function PATCH(
     return NextResponse.json(
       { message: "유효하지 않은 단계입니다." },
       { status: 400 },
+    );
+  }
+
+  await simulateNetworkDelay();
+
+  if (shouldSimulateFailure()) {
+    return NextResponse.json(
+      { message: "일시적인 오류로 저장에 실패했습니다." },
+      { status: 500 },
     );
   }
 

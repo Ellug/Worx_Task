@@ -258,3 +258,21 @@ PROMPTS.md, DECISIONS.md 를 repo 최상단에 배치할거야
 - PROMPTS.md에 이번 논의(프롬프트 1, 2)를 [ui-states] 섹션으로 기록
 
 ### 리뷰 / 검증
+
+## [network-sim] mock API 네트워크 지연/실패 시뮬레이션
+
+### 프롬프트 1 (CLAUDE CODE)
+> mock API에 해당 요구사항으로 작성해
+
+### AI 출력 요지
+- `src/lib/server/simulate-network.ts`: 200~800ms 랜덤 지연(`simulateNetworkDelay`)과 15% 확률 실패(`shouldSimulateFailure`)를 제공하는 공용 유틸 신규 작성
+- 기존 `PATCH /api/candidates/[id]`에 지연+실패 시뮬레이션 적용 (검증 통과 후, 실제 저장 직전에 체크 — 실패 시 서버 상태는 변경되지 않음)
+- 신규 `GET /api/candidates` 라우트 추가(동일한 지연+실패 시뮬레이션 적용), mock API로 읽기/쓰기를 모두 처리한다는 원래 요구사항에 맞춤
+- `src/components/board/Board.tsx`: 초기 지원자 목록을 더 이상 서버에서 직접 주입받지 않고, mount 시 `GET /api/candidates`를 호출하도록 변경. 로딩 중에는 "지원자 목록을 불러오는 중…" 표시, 실패 시 에러 메시지 + "다시 시도" 버튼(재조회) 표시 — 다만 이 로딩/에러 UI는 최소 기능만 구현했고 디자인은 다듬지 않음(폴리싱은 별도 요청 시 진행 예정)
+- `src/app/page.tsx`: 서버 사이드 store 직접 읽기(`getCandidates`, `force-dynamic`) 제거, Board가 자체적으로 데이터를 불러오도록 단순화
+- `npm run lint`·`tsc --noEmit` 통과 확인. React 19 `react-hooks/set-state-in-effect` 린트 규칙 때문에 초기 구현(useEffect에서 setState를 동반한 async 함수를 직접 호출)이 실패해서, effect 본문은 프로미스 체인만 실행하고 재시도는 별도 상태(`reloadKey`)와 이벤트 핸들러에서 동기 setState를 하도록 재구성
+- Playwright로 (1) 최초 진입 시 로딩 문구가 보였다가 보드가 렌더되는지, (2) GET을 강제로 500 응답하도록 가로채 에러+재시도 UI가 뜨는지와 재시도 성공 시 정상 렌더되는지, (3) curl로 30회 반복 요청해 지연 시간대(약 200~800ms)와 실패 응답이 실제로 섞여 나오는지 직접 확인
+
+### 리뷰 / 검증
+- 최초 진입시 로딩 확인
+- 간헐적 지연 작동 확인
