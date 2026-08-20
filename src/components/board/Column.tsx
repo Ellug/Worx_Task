@@ -17,6 +17,24 @@ interface ColumnProps {
   ) => void;
 }
 
+// fromIndex에서 direction 방향으로 훑어, 아직 이동 중(movingIds)이 아닌 첫 카드의
+// id를 반환한다. 이동 중인 카드는 서버에 자기 자신의 위치가 아직 확정되지 않은
+// 상태라, beforeId/afterId 기준점으로 참조하면 서버가 그 카드의 예전 순서값을
+// 기준으로 계산해버려 엉뚱한 위치에 꽂힐 수 있다.
+function findStableNeighborId(
+  candidates: Candidate[],
+  movingIds: Set<string>,
+  fromIndex: number,
+  direction: 1 | -1,
+): string | null {
+  for (let i = fromIndex; i >= 0 && i < candidates.length; i += direction) {
+    if (!movingIds.has(candidates[i].id)) {
+      return candidates[i].id;
+    }
+  }
+  return null;
+}
+
 export function Column({
   stage,
   candidates,
@@ -39,8 +57,13 @@ export function Column({
 
     // 카드 위에 직접 놓인 경우는 CandidateCard가 stopPropagation으로 처리하므로,
     // 여기까지 도달하는 건 컬럼의 빈 영역(마지막 카드 아래)에 놓인 경우다.
-    const lastCandidate = candidates[candidates.length - 1];
-    onDropCandidate(candidateId, lastCandidate ? lastCandidate.id : null, null);
+    const anchorId = findStableNeighborId(
+      candidates,
+      movingIds,
+      candidates.length - 1,
+      -1,
+    );
+    onDropCandidate(candidateId, anchorId, null);
   };
 
   return (
@@ -78,7 +101,7 @@ export function Column({
               onDropBefore={(draggedId) =>
                 onDropCandidate(
                   draggedId,
-                  index > 0 ? candidates[index - 1].id : null,
+                  findStableNeighborId(candidates, movingIds, index - 1, -1),
                   candidate.id,
                 )
               }
@@ -86,9 +109,7 @@ export function Column({
                 onDropCandidate(
                   draggedId,
                   candidate.id,
-                  index < candidates.length - 1
-                    ? candidates[index + 1].id
-                    : null,
+                  findStableNeighborId(candidates, movingIds, index + 1, 1),
                 )
               }
             />
