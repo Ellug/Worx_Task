@@ -21,10 +21,11 @@ npm run dev
 
 ## 배포
 
-(추후 배포 링크 추가 예정)
+[https://worx-task.vercel.app/]https://worx-task.vercel.app/
 
 ## 프로젝트 문서
 
-- [CONVENTION.md](./CONVENTION.md): 커밋 메시지 규칙 및 작업 진행 방식
 - [PROMPTS.md](./PROMPTS.md): 기능 단위 AI 프롬프트와 리뷰/검증 기록
 - [DECISIONS.md](./DECISIONS.md): 설계 결정 기록
+
+- [CONVENTION.md](./CONVENTION.md): 커밋 메시지 규칙 및 작업 진행 방식

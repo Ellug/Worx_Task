@@ -405,3 +405,55 @@ PROMPTS.md, DECISIONS.md 를 repo 최상단에 배치할거야
 ### 리뷰 / 검증
 - 반복 테스트상 정상 작동 확인.
 - 추가적인 부하 테스트는 이후 진행하고 나머지 요구사항 우선 개발 진행 결정.
+
+## [keyboard-nav] 키보드만으로 단계 이동 + 상세 열람
+
+### 프롬프트 1 (CLAUDE CODE)
+> 다음으로 키보드만으로 단계 이동과 상세 열람을 가능하도록 구성할거야
+> 입력처리와, 실제 작동을 책임분리해서 구성하는 것으로 드래그&드롭이나 다른 입력과 호환 및 확장 가능한 형태로 구성하자
+>
+> 우선 방향키로 선택 대상 카드를 고를 수 있게 하고,
+> q e 키를 통해 해당 카드를 보드상에서 이동할 수 있도록 구성해.
+> 서류검토에서는 더이상 좌로 이동 불가능하고, 불합격에서는 더이상 우로 불가능하도록 예외처리 해두고
+>
+> 스페이스바 입력시 상세 정보 패널을 열도록 구성해
+>
+> 현재 선택한 카드가 뭔지 노란색 태두리로 시각화하고
+
+### AI 출력 요지
+- `src/lib/order.ts`: Column에 있던 `findStableNeighborId`를 이 공유 모듈로 이동 + export — 드래그앤드롭과 키보드 이동이 "컬럼 끝에 삽입" 위치 계산 로직을 동일하게 재사용하도록 함
+- `src/hooks/useBoardKeyboardControls.ts` 신규: 입력 처리 전담 훅. 방향키로 `focusedCandidateId`(선택 카드)만 옮기고, q/e/스페이스는 `onMoveToStage`/`onOpenDetail` 콜백을 호출할 뿐 실제 이동·저장 방식은 전혀 모름 — 검색 인풋 등 타이핑 대상에 포커스가 있으면 모든 키를 무시
+- `src/components/board/Board.tsx`: 기존 `moveCandidate`(드래그앤드롭이 쓰던 것과 동일한 액션 함수)를 그대로 두고, 키보드 전용 래퍼 `moveCandidateToStage(candidateId, stageId)`만 추가 — `findStableNeighborId`로 대상 컬럼 끝 위치를 계산해 동일한 `moveCandidate`를 호출. 즉 입력(키보드 vs 드래그)과 액션(카드 이동)이 완전히 분리되고 액션 함수는 하나만 존재
+- 방향키: 상/하는 같은 컬럼 내 이전/다음 카드로, 좌/우는 인접 컬럼으로 포커스 이동(같은 인덱스 위치 우선, 없으면 clamp). q/e는 STAGES 배열 기준 이전/다음 스테이지로 이동, 서류검토에서 q·불합격에서 e는 범위 밖이라 조용히 무시. 이동 후에도 포커스는 id 기준으로 추적해 카드를 그대로 따라감
+- `src/components/board/CandidateCard.tsx`: `isFocused` prop 추가, 선택된 카드에 `ring-2 ring-yellow-400` 시각 표시
+- `npm run lint`·`tsc --noEmit` 통과 확인. Playwright로 첫 ArrowDown 시 서류검토 첫 카드 자동 선택, 상/하 이동, 좌/우 컬럼 전환, 서류검토에서 q 눌러도 컬럼 불변(경계 처리), e로 실제 단계 이동 + 포커스 유지, 스페이스로 상세 패널 오픈, 검색창 타이핑 시 q/e/스페이스가 board 액션으로 새지 않는지까지 7개 시나리오 모두 직접 검증
+
+### 리뷰 / 검증
+- 실 사용시 정상 작동은 확인했으나 이동한 카드가 최하단으로 이동하는 현상 확인. 사용감을 위해 같은 열 연산 추가 조치 필요 판단.
+- 정독 결과 새로 생성된 코드가 인라인 2칸으로 적용된 형태 확인. 수정 조치 결정.
+
+### 프롬프트 2 (CLAUDE CODE)
+> 정상 작동은 확인했으나 이동한 카드가 최하단으로 이동하는 현상 확인. 사용감을 위해 같은 열 연산 추가 조치 필요할 것으로 보이는데
+> 그리고 지금 코드들 왜 인라인 2칸으로 한거야? 4칸이 표준 아니야? 내가 일부러 4칸으로 고쳤는데 왜 다시 2칸으로 한거야. 4칸으로 고정해
+
+### AI 출력 요지
+- 인라인 2칸으로 새로 작성됐던 5개 파일(`Board.tsx`, `Column.tsx`, `CandidateCard.tsx`, `useBoardKeyboardControls.ts`, `order.ts`)을 전부 4칸으로 재변환(내용은 그대로, 들여쓰기만 2배로 확장). 프로젝트에 `.prettierrc`/`.editorconfig`가 없어 자동으로 강제되지 않는다는 점 확인, 재발 방지를 위해 이 사실을 메모리에 기록해둠
+- q/e로 단계 이동 시 항상 컬럼 "끝"에 삽입되던 걸, 원래 컬럼에서의 상대 위치(인덱스)를 대상 컬럼 길이에 맞춰 클램프해 비슷한 자리에 넣도록 수정 — `useBoardKeyboardControls`의 q/e 핸들러가 `sourceIndex`(현재 카드의 컬럼 내 인덱스)를 `onMoveToStage`에 같이 넘기고, `Board.tsx`의 `moveCandidateToStage`가 그 인덱스를 대상 컬럼에서 `findStableNeighborId`로 앞/뒤 이웃을 찾아 beforeId/afterId를 계산하도록 변경
+- `npm run lint`·`tsc --noEmit` 통과 확인, 모든 수정 파일이 4칸 들여쓰기인지 재확인. Playwright로 서류검토 4번째(인덱스 3) 카드를 포커스해 'e'로 면접(201건)으로 이동시켰을 때 최하단이 아니라 그대로 인덱스 3 위치에 꽂히는지 직접 검증
+
+### 리뷰 / 검증
+- 정상 작동 확인
+- 단, 선택한 카드와 스크롤이 맞지 않는 현상 확인. 조치 필요 결정.
+
+### 프롬프트 3 (CLAUDE CODE)
+> 선택한 카드를 자기 컬럼 내에서 이동할때, 옆 컬럼으로 이동할때 모두 온전히 보이도록 스크롤을 쫓아오게 조치해
+
+### AI 출력 요지
+- `useBoardKeyboardControls`에 선택 카드의 위치(스테이지 인덱스/카드 인덱스)를 추적하는 `useEffect`를 추가해, 위치가 바뀔 때마다 `document.querySelector('[data-candidate-id=...]')`로 해당 카드 DOM을 찾아 `scrollIntoView({ block: "nearest", inline: "nearest", behavior: "smooth" })` 호출
+- `focusedCandidateId`만 의존성으로 두면 q/e 이동(아이디는 그대로, 위치만 바뀜)을 놓치므로, `locate()`로 구한 `stageIndex`/`cardIndex`도 함께 의존성에 포함 — 컬럼 내 상하 이동, 컬럼 간 좌우 이동, q/e로 실제 단계가 바뀌는 경우 모두 이 하나의 effect로 커버됨
+- `scrollIntoView`의 `block`/`inline` "nearest" 옵션 덕분에 컬럼의 세로 스크롤(overflow-y-auto)과 보드의 가로 스크롤(overflow-x-auto) 두 스크롤 컨테이너를 모두 필요한 만큼만 따로 처리 — 별도 좌표 계산 코드 없이 브라우저 내장 동작에 위임
+- `npm run lint`·`tsc --noEmit` 통과 확인, 900×700 좁은 뷰포트로 Playwright 검증: (1) 같은 컬럼에서 ArrowDown 16회 연타 후 선택 카드가 화면 안에 완전히 들어오는지 (2) ArrowRight 4회로 불합격까지 이동 후 카드가 잘리지 않는지 (3) 'e'로 실제 단계를 이동시킨 뒤에도 이동한 카드가 완전히 보이는지 — 3가지 모두 좌표 기준으로 직접 확인
+
+### 리뷰 / 검증
+- 방향키 이동, 카드 이동, 상세 패널, 스크롤 정상 작동 확인
+- 카드 이동을 키보드 입력으로 빠르게 작동했을 때, 지연 및 실패 타이밍에 따라 되돌아오는 지점을 예측하기 어려운 문제가 있음. 요구사항에 반하는 문제인지 추가 판단 필요. 우선 고려만 한 체로 기능 개발 진행.
