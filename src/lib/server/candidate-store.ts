@@ -9,9 +9,16 @@ declare global {
 }
 
 function getStore(): Candidate[] {
-  globalThis.__candidateStore ??= INITIAL_CANDIDATES.map((candidate) => ({
-    ...candidate,
-  }));
+  if (
+    !globalThis.__candidateStore ||
+    globalThis.__candidateStore.length !== INITIAL_CANDIDATES.length
+  ) {
+    globalThis.__candidateStore = INITIAL_CANDIDATES.map((candidate) => ({
+      ...candidate,
+      skills: [...candidate.skills],
+    }));
+  }
+
   return globalThis.__candidateStore;
 }
 
