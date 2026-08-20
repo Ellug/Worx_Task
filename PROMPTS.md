@@ -123,3 +123,19 @@ PROMPTS.md, DECISIONS.md 를 repo 최상단에 배치할거야
 
 ### 리뷰 / 검증
 - 기본적인 UI 구조와 컴포넌트 책임 분리 정상 적용 확인
+
+## [candidate-card] 지원자 카드 컴포넌트
+
+### 프롬프트 1 (CLAUDE CODE)
+> 카드 컴포넌트 작성을 진행해. 카드에는 이름, 직무, 지원일, 현재 단계가 표시되도록 작성해
+
+### AI 출력 요지
+- `src/lib/candidates.ts`: `Candidate` 타입(이름/직무/지원일/현재 단계) 신규 작성 + 화면 확인용 임시 샘플 데이터(`SAMPLE_CANDIDATES`) 6건 추가 (mock API 방식이 정해지기 전까지 로컬 데이터로만 사용)
+- `src/components/board/CandidateCard.tsx`: 이름, 직무, 지원일, 현재 단계(색상 배지)를 표시하는 카드 컴포넌트 신규 작성
+- `src/lib/stages.ts`: Column에 있던 단계별 색상 매핑을 `STAGE_DOT_TONE_CLASSNAME`/`STAGE_BADGE_TONE_CLASSNAME`으로 옮겨 Column과 CandidateCard가 함께 재사용하도록 정리
+- `src/components/board/Board.tsx`: `candidates` prop을 받아 단계별로 필터링해 각 Column의 children으로 CandidateCard를 렌더링
+- `src/app/page.tsx`: `SAMPLE_CANDIDATES`를 Board에 전달해 실제 카드가 보이도록 연결
+- `npm run lint`·`tsc --noEmit` 통과 확인, dev 서버 기동 후 Playwright로 스크린샷 검증(카드별 이름/직무/지원일/단계 배지 정상 렌더링, 컬럼 카운트 배지 자동 반영 확인)
+
+### 리뷰 / 검증
+(사용자 작성 예정)

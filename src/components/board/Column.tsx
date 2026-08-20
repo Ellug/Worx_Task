@@ -1,11 +1,5 @@
 import { Children, type ReactNode } from "react";
-import type { Stage, StageTone } from "@/lib/stages";
-
-const toneDotClassName: Record<StageTone, string> = {
-  default: "bg-zinc-400 dark:bg-zinc-500",
-  success: "bg-emerald-500",
-  reject: "bg-rose-500",
-};
+import { STAGE_DOT_TONE_CLASSNAME, type Stage } from "@/lib/stages";
 
 interface ColumnProps {
   stage: Stage;
@@ -24,7 +18,7 @@ export function Column({ stage, children }: ColumnProps) {
         <h2 className="flex items-center gap-2 text-sm font-semibold text-zinc-900 dark:text-zinc-50">
           <span
             aria-hidden
-            className={`h-2 w-2 rounded-full ${toneDotClassName[stage.tone]}`}
+            className={`h-2 w-2 rounded-full ${STAGE_DOT_TONE_CLASSNAME[stage.tone]}`}
           />
           {stage.name}
         </h2>

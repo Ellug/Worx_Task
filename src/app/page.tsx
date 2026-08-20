@@ -1,4 +1,5 @@
 import { Board } from "@/components/board/Board";
+import { SAMPLE_CANDIDATES } from "@/lib/candidates";
 
 export default function Home() {
   return (
@@ -9,7 +10,7 @@ export default function Home() {
         </h1>
       </header>
       <main className="min-h-0 flex-1">
-        <Board />
+        <Board candidates={SAMPLE_CANDIDATES} />
       </main>
     </div>
   );
