@@ -1,9 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { reorderCandidate } from "@/lib/server/candidate-store";
-import {
-    shouldSimulateFailure,
-    simulateNetworkDelay,
-} from "@/lib/server/simulate-network";
+import { shouldSimulateFailure, simulateNetworkDelay } from "@/lib/server/simulate-network";
 import { isStageId } from "@/lib/stages";
 
 function isNullableId(value: unknown): value is string | null {

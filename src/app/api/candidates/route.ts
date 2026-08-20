@@ -1,9 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCandidates } from "@/lib/server/candidate-store";
-import {
-    shouldSimulateFailure,
-    simulateNetworkDelay,
-} from "@/lib/server/simulate-network";
+import { shouldSimulateFailure, simulateNetworkDelay } from "@/lib/server/simulate-network";
 
 export async function GET() {
     await simulateNetworkDelay();

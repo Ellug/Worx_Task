@@ -16,6 +16,10 @@ interface UseBoardKeyboardControlsOptions {
     enabled: boolean;
 }
 
+const STAGE_JUMP_KEYS = new Set(
+    STAGES.map((_, index) => String(index + 1)),
+);
+
 const HANDLED_KEYS = new Set([
     "ArrowUp",
     "ArrowDown",
@@ -24,6 +28,7 @@ const HANDLED_KEYS = new Set([
     "q",
     "e",
     " ",
+    ...STAGE_JUMP_KEYS,
 ]);
 
 function isTypingTarget(target: EventTarget | null): boolean {
@@ -115,6 +120,19 @@ export function useBoardKeyboardControls({
             const { stageIndex, cardIndex } = location;
             const currentList = candidatesByStage[STAGES[stageIndex].id] ?? [];
 
+            if (STAGE_JUMP_KEYS.has(key)) {
+                event.preventDefault();
+                const targetIndex = Number(key) - 1;
+                if (targetIndex !== stageIndex) {
+                    onMoveToStage(
+                        currentList[cardIndex].id,
+                        STAGES[targetIndex].id,
+                        cardIndex,
+                    );
+                }
+                return;
+            }
+
             switch (key) {
                 case "ArrowUp":
                     event.preventDefault();
@@ -154,23 +172,19 @@ export function useBoardKeyboardControls({
                     break;
                 case "q":
                     event.preventDefault();
-                    if (stageIndex > 0) {
-                        onMoveToStage(
-                            currentList[cardIndex].id,
-                            STAGES[stageIndex - 1].id,
-                            cardIndex,
-                        );
-                    }
+                    onMoveToStage(
+                        currentList[cardIndex].id,
+                        STAGES[(stageIndex - 1 + STAGES.length) % STAGES.length].id,
+                        cardIndex,
+                    );
                     break;
                 case "e":
                     event.preventDefault();
-                    if (stageIndex < STAGES.length - 1) {
-                        onMoveToStage(
-                            currentList[cardIndex].id,
-                            STAGES[stageIndex + 1].id,
-                            cardIndex,
-                        );
-                    }
+                    onMoveToStage(
+                        currentList[cardIndex].id,
+                        STAGES[(stageIndex + 1) % STAGES.length].id,
+                        cardIndex,
+                    );
                     break;
                 case " ":
                     event.preventDefault();
