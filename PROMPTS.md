@@ -158,3 +158,23 @@ PROMPTS.md, DECISIONS.md 를 repo 최상단에 배치할거야
 ### 리뷰 / 검증
 - 정상 작동 확인.
 - 현재 md 문서에 지나치게 불필요한 정보를 클로드가 직접 작성하는 이슈가 확인 됨. 하지만 남은 시간을 고려해 이 이상 컨벤션을 수정하지 않고 우선 기능 개발 속행.
+
+## [board-filter] 보드 필터 UI (이름 검색 + 직무 체크박스)
+
+### 프롬프트 1 (CLAUDE CODE)
+> 보드 위쪽에 필터 기능을 만들거야
+> 우선 필터 UI를 구성해
+> 컨테이너 컴포넌트 먼저 정의하고, 내부에 이름 검색 역할을 검색창과, 직무별 필터를 위한 체크박스를 구현할거야
+>
+> 인풋창, 체크박스에 대한 필터를 공통처리해야하니 로직을 외부로 빼는 게 좋다고 생각하는데
+> 이런 구조가 데이터가 200~1000건 이상인 경우에 대응하기에 지연 없이 동작하도록 구성하기 적합한지 우선 판단하고, 적합한 구조면 진행해
+> 부적합하다 판단하면 이유랑 근거, 대안을 나한테 제시하고
+
+### AI 출력 요지
+- 구조 판단: 필터 로직(이름 검색 + 직무 체크박스)을 컴포넌트 밖 커스텀 훅으로 분리하는 방향은 200~1000건 규모에 적합하다고 판단. 근거: 필터 predicate 자체가 O(n)이라 N=1000, 1000회 반복 벤치마크에서 1회당 평균 0.055ms로 연산 비용이 사실상 무시할 수준(node -e 벤치마크로 직접 측정), 진짜 병목은 필터링이 아니라 리렌더링이라 `useMemo`로 파생 리스트를 감싸고 검색어에 `useDeferredValue`를 적용하면 됨. 가상화는 이번 규모에선 불필요.
+- `src/hooks/useCandidateFilter.ts`: candidates 배열을 받아 nameQuery/selectedPositions state, 직무 목록(allPositions), 파생된 filteredCandidates(useMemo)를 반환하는 훅으로 필터 로직을 UI와 분리
+- `src/components/board/FilterBar.tsx`: 이름 검색 input(`type="search"`)과 직무별 체크박스(`fieldset`)를 담은 컨테이너 컴포넌트, 상태는 상위(Board)에서 controlled로 주입
+- `src/components/board/Board.tsx`: useCandidateFilter를 사용해 FilterBar를 보드 상단에 배치하고, 컬럼에는 filteredCandidates만 전달 (카운트 배지도 필터 결과에 자동 반영)
+- `npm run lint`·`tsc --noEmit` 통과 확인, Playwright로 이름 검색(6건→1건)과 직무 체크박스(6건→2건, 대상자 이름까지) 필터링이 정확히 동작하는지 직접 검증
+
+### 리뷰 / 검증

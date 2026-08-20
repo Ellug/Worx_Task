@@ -3,9 +3,11 @@
 import { useCallback, useState } from "react";
 import type { Candidate } from "@/lib/candidates";
 import { STAGES, type StageId } from "@/lib/stages";
+import { useCandidateFilter } from "@/hooks/useCandidateFilter";
 import { CandidateCard } from "./CandidateCard";
 import { Column } from "./Column";
 import { ErrorToast } from "./ErrorToast";
+import { FilterBar } from "./FilterBar";
 
 interface BoardProps {
   initialCandidates: Candidate[];
@@ -15,6 +17,15 @@ export function Board({ initialCandidates }: BoardProps) {
   const [candidates, setCandidates] = useState(initialCandidates);
   const [movingId, setMovingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const {
+    nameQuery,
+    setNameQuery,
+    allPositions,
+    selectedPositions,
+    togglePosition,
+    filteredCandidates,
+  } = useCandidateFilter(candidates);
 
   const dismissError = useCallback(() => setError(null), []);
 
@@ -60,29 +71,38 @@ export function Board({ initialCandidates }: BoardProps) {
   );
 
   return (
-    <div className="relative h-full">
-      <div className="flex h-full items-start gap-4 overflow-x-auto p-6">
-        {STAGES.map((stage) => (
-          <Column
-            key={stage.id}
-            stage={stage}
-            onDropCandidate={(candidateId) =>
-              moveCandidate(candidateId, stage.id)
-            }
-          >
-            {candidates
-              .filter((candidate) => candidate.stageId === stage.id)
-              .map((candidate) => (
-                <CandidateCard
-                  key={candidate.id}
-                  candidate={candidate}
-                  isMoving={movingId === candidate.id}
-                />
-              ))}
-          </Column>
-        ))}
+    <div className="flex h-full flex-col">
+      <FilterBar
+        nameQuery={nameQuery}
+        onNameQueryChange={setNameQuery}
+        positions={allPositions}
+        selectedPositions={selectedPositions}
+        onTogglePosition={togglePosition}
+      />
+      <div className="relative min-h-0 flex-1">
+        <div className="flex h-full items-start gap-4 overflow-x-auto p-6">
+          {STAGES.map((stage) => (
+            <Column
+              key={stage.id}
+              stage={stage}
+              onDropCandidate={(candidateId) =>
+                moveCandidate(candidateId, stage.id)
+              }
+            >
+              {filteredCandidates
+                .filter((candidate) => candidate.stageId === stage.id)
+                .map((candidate) => (
+                  <CandidateCard
+                    key={candidate.id}
+                    candidate={candidate}
+                    isMoving={movingId === candidate.id}
+                  />
+                ))}
+            </Column>
+          ))}
+        </div>
+        {error && <ErrorToast message={error} onDismiss={dismissError} />}
       </div>
-      {error && <ErrorToast message={error} onDismiss={dismissError} />}
     </div>
   );
 }
