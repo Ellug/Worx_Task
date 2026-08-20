@@ -8,8 +8,8 @@ export interface Candidate {
   stageId: StageId;
 }
 
-// 임시 로컬 데이터. mock API 방식이 정해지기 전까지 화면 확인용으로만 사용.
-export const SAMPLE_CANDIDATES: Candidate[] = [
+// mock API(candidate-store)의 초기 시드 데이터.
+export const INITIAL_CANDIDATES: Candidate[] = [
   {
     id: "c1",
     name: "김도윤",

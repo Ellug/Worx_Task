@@ -1,15 +1,34 @@
+"use client";
+
+import type { DragEvent } from "react";
 import type { Candidate } from "@/lib/candidates";
 import { STAGES, STAGE_BADGE_TONE_CLASSNAME } from "@/lib/stages";
 
 interface CandidateCardProps {
   candidate: Candidate;
+  isMoving?: boolean;
 }
 
-export function CandidateCard({ candidate }: CandidateCardProps) {
+export function CandidateCard({
+  candidate,
+  isMoving = false,
+}: CandidateCardProps) {
   const stage = STAGES.find((s) => s.id === candidate.stageId);
 
+  const handleDragStart = (event: DragEvent<HTMLElement>) => {
+    event.dataTransfer.setData("text/plain", candidate.id);
+    event.dataTransfer.effectAllowed = "move";
+  };
+
   return (
-    <article className="rounded-md border border-zinc-200 bg-white p-3 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
+    <article
+      draggable={!isMoving}
+      onDragStart={handleDragStart}
+      aria-busy={isMoving}
+      className={`rounded-md border border-zinc-200 bg-white p-3 shadow-sm transition-opacity dark:border-zinc-800 dark:bg-zinc-950 ${
+        isMoving ? "cursor-wait opacity-60" : "cursor-grab active:cursor-grabbing"
+      }`}
+    >
       <div className="flex items-start justify-between gap-2">
         <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
           {candidate.name}
@@ -28,6 +47,11 @@ export function CandidateCard({ candidate }: CandidateCardProps) {
       <p className="mt-2 text-xs text-zinc-400 dark:text-zinc-600">
         지원일 {candidate.appliedAt}
       </p>
+      {isMoving && (
+        <p className="mt-2 text-[11px] text-zinc-400 dark:text-zinc-600">
+          저장 중…
+        </p>
+      )}
     </article>
   );
 }

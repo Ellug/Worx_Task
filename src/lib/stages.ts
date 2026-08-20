@@ -21,6 +21,10 @@ export const STAGES: Stage[] = [
   { id: "rejected", name: "불합격", tone: "reject" },
 ];
 
+export function isStageId(value: string): value is StageId {
+  return STAGES.some((stage) => stage.id === value);
+}
+
 export const STAGE_DOT_TONE_CLASSNAME: Record<StageTone, string> = {
   default: "bg-zinc-400 dark:bg-zinc-500",
   success: "bg-emerald-500",

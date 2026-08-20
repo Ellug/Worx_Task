@@ -1,18 +1,43 @@
-import { Children, type ReactNode } from "react";
+"use client";
+
+import { Children, useState, type DragEvent, type ReactNode } from "react";
 import { STAGE_DOT_TONE_CLASSNAME, type Stage } from "@/lib/stages";
 
 interface ColumnProps {
   stage: Stage;
   children?: ReactNode;
+  onDropCandidate?: (candidateId: string) => void;
 }
 
-export function Column({ stage, children }: ColumnProps) {
+export function Column({ stage, children, onDropCandidate }: ColumnProps) {
   const count = Children.count(children);
+  const [isDragOver, setIsDragOver] = useState(false);
+
+  const handleDragOver = (event: DragEvent<HTMLElement>) => {
+    event.preventDefault();
+    setIsDragOver(true);
+  };
+
+  const handleDrop = (event: DragEvent<HTMLElement>) => {
+    event.preventDefault();
+    setIsDragOver(false);
+    const candidateId = event.dataTransfer.getData("text/plain");
+    if (candidateId) {
+      onDropCandidate?.(candidateId);
+    }
+  };
 
   return (
     <section
       aria-label={stage.name}
-      className="flex h-full w-72 shrink-0 flex-col rounded-lg border border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900"
+      onDragOver={handleDragOver}
+      onDragLeave={() => setIsDragOver(false)}
+      onDrop={handleDrop}
+      className={`flex h-full w-72 shrink-0 flex-col rounded-lg border bg-zinc-50 transition-colors dark:bg-zinc-900 ${
+        isDragOver
+          ? "border-blue-400 dark:border-blue-500"
+          : "border-zinc-200 dark:border-zinc-800"
+      }`}
     >
       <header className="flex items-center justify-between border-b border-zinc-200 px-4 py-3 dark:border-zinc-800">
         <h2 className="flex items-center gap-2 text-sm font-semibold text-zinc-900 dark:text-zinc-50">
