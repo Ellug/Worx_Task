@@ -1,4 +1,5 @@
 import { INITIAL_CANDIDATES, ORDER_GAP, type Candidate } from "@/lib/candidates";
+import { computeOrderBetween } from "@/lib/order";
 import type { StageId } from "@/lib/stages";
 
 // 페이지(page.tsx)와 API 라우트가 dev 모드(Turbopack)에서 서로 다른 모듈
@@ -41,30 +42,6 @@ function rebalanceStage(candidates: Candidate[], stageId: StageId): void {
         .forEach((candidate, index) => {
             candidate.order = (index + 1) * ORDER_GAP;
         });
-}
-
-// beforeOrder와 afterOrder 사이에 끼워 넣을 새 order를 계산한다.
-// 두 값의 중간을 더 이상 정밀하게 표현할 수 없으면(충돌) null을 반환해
-// 호출부가 재정렬 후 재계산하도록 한다.
-function computeOrderBetween(
-    beforeOrder: number | null,
-    afterOrder: number | null,
-): number | null {
-    if (beforeOrder === null && afterOrder === null) {
-        return ORDER_GAP;
-    }
-
-    if (beforeOrder === null) {
-        const candidate = afterOrder! / 2;
-        return candidate > 0 && candidate < afterOrder! ? candidate : null;
-    }
-
-    if (afterOrder === null) {
-        return beforeOrder + ORDER_GAP;
-    }
-
-    const mid = (beforeOrder + afterOrder) / 2;
-    return mid > beforeOrder && mid < afterOrder ? mid : null;
 }
 
 function getStore(): Candidate[] {
