@@ -138,4 +138,4 @@ PROMPTS.md, DECISIONS.md 를 repo 최상단에 배치할거야
 - `npm run lint`·`tsc --noEmit` 통과 확인, dev 서버 기동 후 Playwright로 스크린샷 검증(카드별 이름/직무/지원일/단계 배지 정상 렌더링, 컬럼 카운트 배지 자동 반영 확인)
 
 ### 리뷰 / 검증
-(사용자 작성 예정)
+- 카드 UI 요구사항 표시 확인
