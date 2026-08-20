@@ -39,7 +39,7 @@ export function CandidateDetailPanel({
         role="dialog"
         aria-modal="true"
         aria-label={`${candidate.name} 상세 정보`}
-        className="fixed inset-y-0 right-0 z-50 flex w-full max-w-sm flex-col overflow-y-auto border-l border-zinc-200 bg-white shadow-xl dark:border-zinc-800 dark:bg-zinc-950"
+        className="fixed inset-y-0 right-0 z-50 flex w-full flex-col overflow-y-auto border-l border-zinc-200 bg-white shadow-xl dark:border-zinc-800 dark:bg-zinc-950 sm:w-1/2"
       >
         <header className="flex items-start justify-between gap-2 border-b border-zinc-200 px-5 py-4 dark:border-zinc-800">
           <div>

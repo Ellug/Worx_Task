@@ -211,3 +211,14 @@ PROMPTS.md, DECISIONS.md 를 repo 최상단에 배치할거야
 - `npm run lint`·`tsc --noEmit` 통과 확인, Playwright로 패널 내 필드 라벨 순서(현재 단계/지원일/이메일/연락처/학력/경력/자기소개서/이력서/메모)와 이력서 링크의 href·target 속성을 직접 검증
 
 ### 리뷰 / 검증
+
+## [candidate-detail] 사이드 패널 너비 확대
+
+### 프롬프트 1 (CLAUDE CODE)
+> 사이드패널이 너무 작은데 화면 반 정도까지 나오게 조정해
+
+### AI 출력 요지
+- `CandidateDetailPanel`의 패널 너비를 `max-w-sm`(384px 고정)에서 `sm:w-1/2`(뷰포트 절반, 640px 미만에서는 `w-full`)로 변경
+- Playwright로 1400px 뷰포트 기준 패널이 정확히 절반(700px)까지 넓어졌는지 스크린샷으로 직접 확인
+
+### 리뷰 / 검증
