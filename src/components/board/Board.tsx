@@ -2,7 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Candidate } from "@/lib/candidates";
-import { computeOrderBetween, findStableNeighborId } from "@/lib/order";
+import {
+    computeOrderBetween,
+    findNeighborsForOrder,
+    findStableNeighborId,
+} from "@/lib/order";
 import { STAGES, type StageId } from "@/lib/stages";
 import { useBoardKeyboardControls } from "@/hooks/useBoardKeyboardControls";
 import { useCandidateFilter } from "@/hooks/useCandidateFilter";
@@ -10,6 +14,12 @@ import { CandidateDetailPanel } from "./CandidateDetailPanel";
 import { Column } from "./Column";
 import { ErrorToast } from "./ErrorToast";
 import { FilterBar } from "./FilterBar";
+
+interface MoveHistoryEntry {
+    candidateId: string;
+    previousStageId: StageId;
+    previousOrder: number;
+}
 
 export function Board() {
     const [candidates, setCandidates] = useState<Candidate[]>([]);
@@ -21,6 +31,7 @@ export function Board() {
     const [selectedCandidateId, setSelectedCandidateId] = useState<
         string | null
     >(null);
+    const [moveHistory, setMoveHistory] = useState<MoveHistoryEntry[]>([]);
 
     useEffect(() => {
         let cancelled = false;
@@ -86,21 +97,14 @@ export function Board() {
     const dismissError = useCallback(() => setError(null), []);
     const closeDetail = useCallback(() => setSelectedCandidateId(null), []);
 
-    // candidateId 하나의 이동만 낙관적으로 반영/롤백한다. 전체 스냅샷을 쓰지 않는 이유:
-    // 다른 카드가 동시에 이동 중일 때, 이 카드의 실패가 그 카드의 성공까지
-    // 되돌려버리는 걸 막기 위해서다. movingIds는 Set이라 여러 카드가 동시에
-    // "이동 중" 상태를 가질 수 있고, 각 카드는 자기 자신의 요청이 끝나기 전까지만
-    // draggable이 꺼진다(Column/CandidateCard 참고).
-    //
-    // 이 함수가 "카드 이동"의 유일한 실행 경로다 — 드래그앤드롭(Column)과 키보드
-    // (moveCandidateToStage 아래)는 각자의 입력을 해석해 beforeId/afterId만
-    // 계산하고, 실제 낙관적 반영/저장/롤백은 항상 여기를 거친다.
+    // candidateId 하나의 이동만 낙관적으로 반영/롤백
     const moveCandidate = useCallback(
         async (
             candidateId: string,
             nextStageId: StageId,
             beforeId: string | null,
             afterId: string | null,
+            recordHistory: boolean = true,
         ) => {
             let alreadyMoving = false;
             setMovingIds((prev) => {
@@ -118,12 +122,16 @@ export function Board() {
 
             let snapshot: Candidate | null = null;
             let snapshotName = "지원자";
+            let snapshotStageId: StageId | null = null;
+            let snapshotOrder = 0;
 
             setCandidates((prev) => {
                 const current = prev.find((c) => c.id === candidateId);
                 if (!current) return prev;
                 snapshot = current;
                 snapshotName = current.name;
+                snapshotStageId = current.stageId;
+                snapshotOrder = current.order;
 
                 const siblings = prev
                     .filter((c) => c.stageId === nextStageId && c.id !== candidateId)
@@ -161,6 +169,16 @@ export function Board() {
                 setCandidates((prev) =>
                     prev.map((c) => (c.id === candidateId ? updated : c)),
                 );
+                if (recordHistory && snapshotStageId) {
+                    setMoveHistory((prev) => [
+                        ...prev,
+                        {
+                            candidateId,
+                            previousStageId: snapshotStageId!,
+                            previousOrder: snapshotOrder,
+                        },
+                    ]);
+                }
             } catch {
                 setCandidates((prev) =>
                     snapshot
@@ -181,8 +199,6 @@ export function Board() {
         [],
     );
 
-    // 키보드(q/e)로 이동할 때는 드롭 좌표가 없다. 항상 컬럼 끝에 넣으면 q/e를
-    // 반복할수록 카드가 계속 최하단에만 쌓여 사용감이 나빠서, 원래 있던 컬럼에서의
     // 상대 위치(sourceIndex)를 대상 컬럼 길이에 맞춰 클램프해 같은 자리쯤에 넣는다.
     const moveCandidateToStage = useCallback(
         (candidateId: string, stageId: StageId, sourceIndex: number) => {
@@ -205,10 +221,38 @@ export function Board() {
         [candidatesByStage, movingIds, moveCandidate],
     );
 
+    const canUndo =
+        moveHistory.length > 0 &&
+        !movingIds.has(moveHistory[moveHistory.length - 1].candidateId);
+
+    const handleUndo = useCallback(() => {
+        const last = moveHistory[moveHistory.length - 1];
+        if (!last || movingIds.has(last.candidateId)) return;
+
+        const targetList = (candidatesByStage[last.previousStageId] ?? []).filter(
+            (c) => c.id !== last.candidateId,
+        );
+        const { beforeId, afterId } = findNeighborsForOrder(
+            targetList,
+            last.previousOrder,
+            movingIds,
+        );
+
+        setMoveHistory((prev) => prev.slice(0, -1));
+        moveCandidate(
+            last.candidateId,
+            last.previousStageId,
+            beforeId,
+            afterId,
+            false,
+        );
+    }, [moveHistory, movingIds, candidatesByStage, moveCandidate]);
+
     const { focusedCandidateId } = useBoardKeyboardControls({
         candidatesByStage,
         onMoveToStage: moveCandidateToStage,
         onOpenDetail: setSelectedCandidateId,
+        onUndo: handleUndo,
         enabled: !selectedCandidate,
     });
 
@@ -245,6 +289,14 @@ export function Board() {
                 onTogglePosition={togglePosition}
             />
             <div className="relative min-h-0 flex-1">
+                <button
+                    type="button"
+                    onClick={handleUndo}
+                    disabled={!canUndo}
+                    className="absolute right-4 top-4 z-30 rounded-md border border-zinc-300 bg-white/90 px-3 py-1.5 text-xs font-medium text-zinc-700 shadow-sm backdrop-blur hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-700 dark:bg-zinc-900/90 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                >
+                    실행 취소 (Ctrl+Z)
+                </button>
                 <div className="flex h-full items-start gap-4 overflow-x-auto p-6">
                     {STAGES.map((stage) => (
                         <Column

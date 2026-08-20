@@ -3,9 +3,7 @@ import type { Candidate } from "@/lib/candidates";
 
 export function useCandidateFilter(candidates: Candidate[]) {
     const [nameQuery, setNameQuery] = useState("");
-    const [selectedPositions, setSelectedPositions] = useState<Set<string>>(
-        new Set(),
-    );
+    const [selectedPositions, setSelectedPositions] = useState<Set<string>>(new Set(), );
     const deferredNameQuery = useDeferredValue(nameQuery);
 
     const allPositions = useMemo(

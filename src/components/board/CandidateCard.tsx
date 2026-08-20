@@ -29,10 +29,6 @@ export function CandidateCard({
         event.dataTransfer.effectAllowed = "move";
     };
 
-    // 이 카드 자신이 아직 이동 중(서버 응답 대기)이면 위치가 확정되지 않은
-    // 상태라 다른 카드의 beforeId/afterId 기준점으로 쓰일 수 없다. 이벤트를
-    // 그대로 흘려보내(stopPropagation 생략) 상위 Column의 핸들러가 대신
-    // "컬럼 끝에 삽입"으로 처리하도록 한다.
     const handleDragOver = (event: DragEvent<HTMLElement>) => {
         if (isMoving) return;
         event.preventDefault();

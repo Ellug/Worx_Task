@@ -40,8 +40,6 @@ export function Column({
         const candidateId = event.dataTransfer.getData("text/plain");
         if (!candidateId) return;
 
-        // 카드 위에 직접 놓인 경우는 CandidateCard가 stopPropagation으로 처리하므로,
-        // 여기까지 도달하는 건 컬럼의 빈 영역(마지막 카드 아래)에 놓인 경우다.
         const anchorId = findStableNeighborId(
             candidates,
             movingIds,

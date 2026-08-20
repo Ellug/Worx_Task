@@ -457,3 +457,24 @@ PROMPTS.md, DECISIONS.md 를 repo 최상단에 배치할거야
 ### 리뷰 / 검증
 - 방향키 이동, 카드 이동, 상세 패널, 스크롤 정상 작동 확인
 - 카드 이동을 키보드 입력으로 빠르게 작동했을 때, 지연 및 실패 타이밍에 따라 되돌아오는 지점을 예측하기 어려운 문제가 있음. 요구사항에 반하는 문제인지 추가 판단 필요. 우선 고려만 한 체로 기능 개발 진행.
+
+## [undo] 카드 이동 Undo (스택 기반)
+
+### 프롬프트 1 (CLAUDE CODE)
+> 이어서 현재 입력 구조에 Undo를 적용할거야.
+> 카드 이동을 스택 구조로 관리해서, 이전 이동 상태로 되돌릴거야.
+> mock API의 에러 처리의 롤백과 꼬이지 않도록 구성해.
+> undo는 컨트롤z와 보드 위에 Undo 버튼을 추가해서 작동하도록 해
+
+### AI 출력 요지
+- `Board.tsx`에 `MoveHistoryEntry { candidateId, previousStageId, previousOrder }` 스택(`moveHistory`) 추가. `moveCandidate`에 `recordHistory` 파라미터를 추가해 mock API 응답이 실제로 성공한 경우에만 스택에 push하도록 해서, 실패 시의 낙관적 업데이트 롤백 경로와 undo 스택이 서로 얽히지 않게 분리
+- `handleUndo`: 스택 최상단을 pop하고, `order.ts`에 추가한 `findNeighborsForOrder`로 해당 카드가 원래 있던 order 값 근처의 현재 before/after 이웃을 다시 찾아 기존 `moveCandidate`를 `recordHistory=false`로 호출 — undo 자체가 새 히스토리 항목으로 다시 쌓이지 않도록 함. 이동 중인 카드가 스택 맨 위일 때는 `canUndo`가 false가 되도록 `movingIds`와 연동해 중복 undo를 방지
+- `useBoardKeyboardControls.ts`: `onUndo` 콜백을 옵션으로 받고, 키다운 핸들러 최상단에서 Ctrl/Cmd+Z를 다른 방향키/q/e 처리보다 먼저 가로채 `onUndo()` 호출 — 기존 입력/액션 분리 구조를 그대로 유지
+- 보드 우상단에 "실행 취소 (Ctrl+Z)" 버튼 추가, `canUndo`가 false면 disabled 처리
+- `setCandidates` 업데이터 클로저 안에서만 대입되는 `let snapshot` 값을 이후 스코프에서 읽을 때 TS가 `never`로 좁혀버리는 문제가 2회 발생 — `snapshotStageId`/`snapshotOrder` 같은 원시값을 클로저 안 같은 지점에서 별도 `let`으로 뽑아내 이후 로직에서는 그 변수만 읽도록 수정해 해결
+- `npm run lint`·`tsc --noEmit` 통과 확인. Turbopack `.next` 캐시로 인한 허위 useEffect 경고를 `rm -rf .next` 후 재확인해 실제 버그가 아님을 확인
+- Playwright로 검증: 히스토리 비어있을 때 버튼 disabled, 버튼 클릭 undo, Ctrl+Z undo, 서로 다른 두 카드에 대한 LIFO 순서(가장 최근 이동부터 역순 복원, 서로 간섭 없음), 실패한 이동은 애초에 히스토리에 쌓이지 않는지(에러 롤백과 undo 스택 비간섭) — mock API의 실제 15% 랜덤 실패로 인해 첫 실행 결과가 비결정적이었던 것을 확인 후, PATCH를 강제 성공시키는 라우트 인터셉트로 재실행해 위 시나리오 모두 결정론적으로 통과 확인
+
+### 리뷰 / 검증
+- undo 버튼, 키보드 입력 정상 작동 확인
+- 구현 코드 정독 과정에서 불필요하게 생성된 주석 제거 작업 병행

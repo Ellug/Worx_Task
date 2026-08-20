@@ -2,16 +2,10 @@ import { INITIAL_CANDIDATES, ORDER_GAP, type Candidate } from "@/lib/candidates"
 import { computeOrderBetween } from "@/lib/order";
 import type { StageId } from "@/lib/stages";
 
-// 페이지(page.tsx)와 API 라우트가 dev 모드(Turbopack)에서 서로 다른 모듈
-// 인스턴스로 번들링돼 모듈 스코프 변수로는 상태가 공유되지 않는다.
-// globalThis에 저장해 재평가되어도 같은 저장소를 참조하도록 한다.
 declare global {
     var __candidateStore: Candidate[] | undefined;
 }
 
-// 스토어가 처음 초기화될 때, 시드 데이터의 기존 순서("이전 값")를 기준으로
-// 스테이지별 order를 깔끔한 간격으로 재배정한다. 장기간 운영되며 잦은 이동으로
-// order 값이 점점 촘촘한 소수가 되는 걸 매 부팅 시점마다 리셋하는 효과가 있다.
 function normalizeOrders(candidates: Candidate[]): void {
     const byStage = new Map<StageId, Candidate[]>();
 
@@ -33,8 +27,6 @@ function normalizeOrders(candidates: Candidate[]): void {
     }
 }
 
-// 특정 스테이지 하나만 현재 order 기준으로 재정렬한다. 두 이웃 사이 간격이
-// 부동소수점 정밀도 한계에 닿아 더 이상 중간값을 계산할 수 없을 때(충돌) 호출된다.
 function rebalanceStage(candidates: Candidate[], stageId: StageId): void {
     candidates
         .filter((candidate) => candidate.stageId === stageId)
@@ -65,9 +57,6 @@ export function getCandidates(): Candidate[] {
         .map((candidate) => ({ ...candidate, skills: [...candidate.skills] }));
 }
 
-// candidateId를 stageId 컬럼의 beforeId/afterId 사이(둘 중 하나 또는 둘 다
-// null이면 각각 컬럼의 시작/끝/전체)로 옮긴다. beforeId/afterId가 가리키는
-// 카드가 없으면(오래된 참조 등) 해당 경계를 null로 취급해 안전하게 처리한다.
 export function reorderCandidate(
     id: string,
     stageId: StageId,
