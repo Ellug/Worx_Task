@@ -96,7 +96,7 @@ PROMPTS.md, DECISIONS.md 를 repo 최상단에 배치할거야
 - 기본적인 문서 컨벤션 형태 확인. 현상 유지.
 
 
-### 프롬프트 3 (CODEX)
+### 프롬프트 4 (CODEX)
 > 현재 디렉토리의 [CONVENTION.md](CONVENTION.md) [DECISIONS.md](DECISIONS.md) [PROMPTS.md](PROMPTS.md) 와 프로젝트 구조를 우선 파악해
 > 콜르도와 병렬작업을 진행할 준비만 할거야. 코드의 작성은 하지말고 파악해서 메모리에만 올려서 작업 준비 상태만 만들어놔
 
@@ -122,5 +122,4 @@ PROMPTS.md, DECISIONS.md 를 repo 최상단에 배치할거야
 - `npm run lint`·`tsc --noEmit` 통과 확인, dev 서버 기동 후 Playwright로 스크린샷 검증(5개 컬럼과 빈 상태 문구 정상 렌더링, 콘솔 에러 없음)
 
 ### 리뷰 / 검증
-(사용자 작성 예정)
-
+- 기본적인 UI 구조와 컴포넌트 책임 분리 정상 적용 확인
