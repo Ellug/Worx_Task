@@ -4,7 +4,7 @@
 
 ## [base] 문서 규칙 수립
 
-### 프롬프트 1
+### 프롬프트 1 (CLAUDE CODE)
 ```
 지원자 채용 파이프라인 보드를 만들거야.
 서류검토 - 면접 - 처우협의 - 최종합격 / 불합격 순이고, 지원자 카드를 단계간 이동하며 관리할거야
@@ -69,7 +69,7 @@ PROMPTS.md, DECISIONS.md 를 repo 최상단에 배치할거야
 - PROMPTS.md의 "작성 규칙" 절을 삭제하고 CONVENTION.md에 "PROMPTS.md 작성 규칙" 절로 이동, PROMPTS.md [base] 섹션에 최초 프롬프트 원문을 프롬프트 1로 추가
 
 
-### 프롬프트 2
+### 프롬프트 2 (CLAUDE CODE)
 > PROMPTS.md에 내 최초 명령을 기재해
 > 현재 PROMPTS.md에 정리돼있는 작성규칙은 컨벤션 md로 이동시켜
 
@@ -82,7 +82,7 @@ PROMPTS.md, DECISIONS.md 를 repo 최상단에 배치할거야
 - 문서 정독.
 - 템플릿은 가독성을 해치기 때문에 직접 수정
 
-### 프롬프트 3
+### 프롬프트 3 (CLAUDE CODE)
 > 템플릿의 문구를 그대로 쓰지 마. 들어갈 내용의 지침이잖아. 내가 수정한 부분을 따라.
 > PROMPTS와 DECISIONS는 최종 내용만 남아야 하기 때문에
 > 템플릿을 포함한 안내 내용은 모두 CONVENTION.md로 이관해
@@ -94,3 +94,33 @@ PROMPTS.md, DECISIONS.md 를 repo 최상단에 배치할거야
 
 ### 리뷰 / 검증
 - 기본적인 문서 컨벤션 형태 확인. 현상 유지.
+
+
+### 프롬프트 3 (CODEX)
+> 현재 디렉토리의 [CONVENTION.md](CONVENTION.md) [DECISIONS.md](DECISIONS.md) [PROMPTS.md](PROMPTS.md) 와 프로젝트 구조를 우선 파악해
+> 콜르도와 병렬작업을 진행할 준비만 할거야. 코드의 작성은 하지말고 파악해서 메모리에만 올려서 작업 준비 상태만 만들어놔
+
+### AI 출력 요지
+- 코드 변경 없이 현재 구조 조회 완료
+
+### 리뷰 / 검증
+- 변경 없음
+
+## [board-layout] 보드/컬럼 기본 구조
+
+### 프롬프트 1 (CLAUDE CODE)
+> 기능 구현을 시작할거야
+> 지원자 카드를 단계별로 이동하기 위한 베이스인 보드와 컬럼을 메인 페이지상에 구현할거야.
+> 컴포넌트 단위로 설계해서 적용해.
+> 여기에 들어갈 카드가 후에 구현될 예정인 걸 고려해서 최초 구현 진행해
+
+### AI 출력 요지
+- `src/lib/stages.ts`: 단계 정의(서류검토/면접/처우협의/최종합격/불합격) + `Stage` 타입 신규 작성
+- `src/components/board/Column.tsx`: 단계별 컬럼 컴포넌트. `children`(카드)이 없으면 빈 상태 문구를 보여주고, `children` 개수로 카운트 배지를 자동 계산해 추후 카드 컴포넌트를 children으로 넣기만 하면 되도록 설계
+- `src/components/board/Board.tsx`: `STAGES`를 순회하며 `Column`을 가로 스크롤 레이아웃으로 렌더링
+- `src/app/page.tsx`, `src/app/layout.tsx`: 메인 페이지에 Board 배치, 보드가 뷰포트를 채우도록 레이아웃/메타데이터 조정
+- `npm run lint`·`tsc --noEmit` 통과 확인, dev 서버 기동 후 Playwright로 스크린샷 검증(5개 컬럼과 빈 상태 문구 정상 렌더링, 콘솔 에러 없음)
+
+### 리뷰 / 검증
+(사용자 작성 예정)
+
