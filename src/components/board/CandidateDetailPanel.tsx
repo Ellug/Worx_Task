@@ -1,0 +1,115 @@
+"use client";
+
+import { useEffect, useRef } from "react";
+import type { Candidate } from "@/lib/candidates";
+import { STAGES, STAGE_BADGE_TONE_CLASSNAME } from "@/lib/stages";
+
+interface CandidateDetailPanelProps {
+  candidate: Candidate;
+  onClose: () => void;
+}
+
+export function CandidateDetailPanel({
+  candidate,
+  onClose,
+}: CandidateDetailPanelProps) {
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const stage = STAGES.find((s) => s.id === candidate.stageId);
+
+  useEffect(() => {
+    closeButtonRef.current?.focus();
+  }, [candidate.id]);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
+  return (
+    <>
+      <div
+        aria-hidden
+        onClick={onClose}
+        className="fixed inset-0 z-40 bg-black/30"
+      />
+      <aside
+        role="dialog"
+        aria-modal="true"
+        aria-label={`${candidate.name} 상세 정보`}
+        className="fixed inset-y-0 right-0 z-50 flex w-full max-w-sm flex-col overflow-y-auto border-l border-zinc-200 bg-white shadow-xl dark:border-zinc-800 dark:bg-zinc-950"
+      >
+        <header className="flex items-start justify-between gap-2 border-b border-zinc-200 px-5 py-4 dark:border-zinc-800">
+          <div>
+            <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">
+              {candidate.name}
+            </h2>
+            <p className="mt-0.5 text-sm text-zinc-500 dark:text-zinc-400">
+              {candidate.position}
+            </p>
+          </div>
+          <button
+            ref={closeButtonRef}
+            type="button"
+            onClick={onClose}
+            aria-label="닫기"
+            className="rounded p-1 text-lg leading-none text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+          >
+            ×
+          </button>
+        </header>
+
+        <dl className="flex-1 space-y-4 px-5 py-5 text-sm">
+          <div>
+            <dt className="text-xs font-medium text-zinc-400 dark:text-zinc-600">
+              현재 단계
+            </dt>
+            <dd className="mt-1">
+              {stage && (
+                <span
+                  className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${STAGE_BADGE_TONE_CLASSNAME[stage.tone]}`}
+                >
+                  {stage.name}
+                </span>
+              )}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-xs font-medium text-zinc-400 dark:text-zinc-600">
+              지원일
+            </dt>
+            <dd className="mt-1 text-zinc-700 dark:text-zinc-300">
+              {candidate.appliedAt}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-xs font-medium text-zinc-400 dark:text-zinc-600">
+              이메일
+            </dt>
+            <dd className="mt-1 text-zinc-700 dark:text-zinc-300">
+              {candidate.email}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-xs font-medium text-zinc-400 dark:text-zinc-600">
+              연락처
+            </dt>
+            <dd className="mt-1 text-zinc-700 dark:text-zinc-300">
+              {candidate.phone}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-xs font-medium text-zinc-400 dark:text-zinc-600">
+              메모
+            </dt>
+            <dd className="mt-1 leading-relaxed text-zinc-700 dark:text-zinc-300">
+              {candidate.note}
+            </dd>
+          </div>
+        </dl>
+      </aside>
+    </>
+  );
+}

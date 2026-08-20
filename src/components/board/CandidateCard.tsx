@@ -7,11 +7,13 @@ import { STAGES, STAGE_BADGE_TONE_CLASSNAME } from "@/lib/stages";
 interface CandidateCardProps {
   candidate: Candidate;
   isMoving?: boolean;
+  onOpenDetail?: (candidateId: string) => void;
 }
 
 export function CandidateCard({
   candidate,
   isMoving = false,
+  onOpenDetail,
 }: CandidateCardProps) {
   const stage = STAGES.find((s) => s.id === candidate.stageId);
 
@@ -24,6 +26,7 @@ export function CandidateCard({
     <article
       draggable={!isMoving}
       onDragStart={handleDragStart}
+      onClick={() => onOpenDetail?.(candidate.id)}
       aria-busy={isMoving}
       className={`rounded-md border border-zinc-200 bg-white p-3 shadow-sm transition-opacity dark:border-zinc-800 dark:bg-zinc-950 ${
         isMoving ? "cursor-wait opacity-60" : "cursor-grab active:cursor-grabbing"

@@ -1,10 +1,11 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import type { Candidate } from "@/lib/candidates";
 import { STAGES, type StageId } from "@/lib/stages";
 import { useCandidateFilter } from "@/hooks/useCandidateFilter";
 import { CandidateCard } from "./CandidateCard";
+import { CandidateDetailPanel } from "./CandidateDetailPanel";
 import { Column } from "./Column";
 import { ErrorToast } from "./ErrorToast";
 import { FilterBar } from "./FilterBar";
@@ -17,6 +18,9 @@ export function Board({ initialCandidates }: BoardProps) {
   const [candidates, setCandidates] = useState(initialCandidates);
   const [movingId, setMovingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [selectedCandidateId, setSelectedCandidateId] = useState<
+    string | null
+  >(null);
 
   const {
     nameQuery,
@@ -27,7 +31,13 @@ export function Board({ initialCandidates }: BoardProps) {
     filteredCandidates,
   } = useCandidateFilter(candidates);
 
+  const selectedCandidate = useMemo(
+    () => candidates.find((c) => c.id === selectedCandidateId) ?? null,
+    [candidates, selectedCandidateId],
+  );
+
   const dismissError = useCallback(() => setError(null), []);
+  const closeDetail = useCallback(() => setSelectedCandidateId(null), []);
 
   const moveCandidate = useCallback(
     async (candidateId: string, nextStageId: StageId) => {
@@ -96,6 +106,7 @@ export function Board({ initialCandidates }: BoardProps) {
                     key={candidate.id}
                     candidate={candidate}
                     isMoving={movingId === candidate.id}
+                    onOpenDetail={setSelectedCandidateId}
                   />
                 ))}
             </Column>
@@ -103,6 +114,12 @@ export function Board({ initialCandidates }: BoardProps) {
         </div>
         {error && <ErrorToast message={error} onDismiss={dismissError} />}
       </div>
+      {selectedCandidate && (
+        <CandidateDetailPanel
+          candidate={selectedCandidate}
+          onClose={closeDetail}
+        />
+      )}
     </div>
   );
 }
