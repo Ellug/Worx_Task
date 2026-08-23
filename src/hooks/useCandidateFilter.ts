@@ -3,7 +3,8 @@ import type { Candidate } from "@/lib/candidates";
 
 export function useCandidateFilter(candidates: Candidate[]) {
     const [nameQuery, setNameQuery] = useState("");
-    const [selectedPositions, setSelectedPositions] = useState<Set<string>>(new Set(), );
+    const [selectedPositions, setSelectedPositions] = useState<Set<string>>(new Set());
+    // 타이핑 자체는 즉시 반영하고, 무거운 필터 재계산만 낮은 우선순위로 미룬다.
     const deferredNameQuery = useDeferredValue(nameQuery);
 
     const allPositions = useMemo(
@@ -11,6 +12,7 @@ export function useCandidateFilter(candidates: Candidate[]) {
         [candidates],
     );
 
+    // 이름 검색어와 선택된 직무를 모두 만족하는 지원자만 남긴다.
     const filteredCandidates = useMemo(() => {
         const query = deferredNameQuery.trim().toLowerCase();
         return candidates.filter((candidate) => {

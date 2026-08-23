@@ -31,6 +31,7 @@ function CandidateCardComponent({
         event.dataTransfer.effectAllowed = "move";
     };
 
+    // 커서가 카드 상단/하단 절반 중 어디 있는지로 삽입 방향을 미리 보여준다.
     const handleDragOver = (event: DragEvent<HTMLElement>) => {
         if (isMoving) return;
         event.preventDefault();
@@ -105,4 +106,5 @@ function CandidateCardComponent({
     );
 }
 
+// 1,000장 규모에서 카드 1장 이동 시 나머지 전체가 재렌더되는 걸 막기 위한 memo.
 export const CandidateCard = memo(CandidateCardComponent);

@@ -7,6 +7,7 @@ function isNullableId(value: unknown): value is string | null {
     return value === null || typeof value === "string";
 }
 
+// 카드의 스테이지·순서를 변경한다. beforeId/afterId 사이로 끼워 넣는 방식.
 export async function PATCH(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> },

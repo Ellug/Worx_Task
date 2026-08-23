@@ -8,6 +8,7 @@ interface ErrorToastProps {
 }
 
 export function ErrorToast({ message, onDismiss }: ErrorToastProps) {
+    // 4초 후 자동으로 닫는다.
     useEffect(() => {
         const timer = setTimeout(onDismiss, 4000);
         return () => clearTimeout(timer);

@@ -28,12 +28,14 @@ export function Column({
     onDropCandidate,
 }: ColumnProps) {
     const [isDragOver, setIsDragOver] = useState(false);
+    // CandidateCard의 memo가 안 깨지도록 콜백은 고정하고, 최신 값은 ref로 읽는다.
     const latestRef = useRef({ candidates, movingIds, onDropCandidate });
-    
+
     useEffect(() => {
         latestRef.current = { candidates, movingIds, onDropCandidate };
     });
 
+    // 카드 위/아래 절반 드롭을 실제 beforeId/afterId 쌍으로 변환한다.
     const handleDropRelative = useCallback(
         (
             draggedId: string,
@@ -70,6 +72,7 @@ export function Column({
         setIsDragOver(true);
     };
 
+    // 카드가 아닌 컬럼의 빈 영역에 드롭하면 맨 끝에 삽입한다.
     const handleDrop = (event: DragEvent<HTMLElement>) => {
         event.preventDefault();
         setIsDragOver(false);

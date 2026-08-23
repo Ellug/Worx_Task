@@ -1,6 +1,7 @@
 import type { Candidate } from "./candidates";
 import { ORDER_GAP } from "./candidates";
 
+// 두 이웃의 order 중간값을 계산한다. 소수점이 소진돼 더 못 쪼개면 null(충돌).
 export function computeOrderBetween(
     beforeOrder: number | null,
     afterOrder: number | null,
@@ -22,6 +23,7 @@ export function computeOrderBetween(
     return mid > beforeOrder && mid < afterOrder ? mid : null;
 }
 
+// fromIndex부터 direction 방향으로 훑어, 이동 중이 아닌 첫 카드를 기준점으로 찾는다.
 export function findStableNeighborId(
     candidates: Candidate[],
     movingIds: Set<string>,
@@ -36,6 +38,7 @@ export function findStableNeighborId(
     return null;
 }
 
+// targetOrder가 들어갈 자리의 앞/뒤 이웃 id를 찾는다(undo가 옛 위치를 복원할 때 사용).
 export function findNeighborsForOrder(
     candidates: Candidate[],
     targetOrder: number,

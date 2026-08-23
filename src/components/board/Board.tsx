@@ -15,6 +15,7 @@ import { Column } from "./Column";
 import { ErrorToast } from "./ErrorToast";
 import { FilterBar } from "./FilterBar";
 
+// 연속 이동을 하나로 합치기 위한 디바운스 대기 시간.
 const MOVE_DEBOUNCE_MS = 500;
 
 interface MoveHistoryEntry {
@@ -70,6 +71,7 @@ export function Board() {
         setMovingIds(new Set(moveStateRef.current.keys()));
     }, []);
 
+    // 초기 지원자 목록을 불러온다. retryLoad가 reloadKey를 바꿔 재시도를 트리거한다.
     useEffect(() => {
         let cancelled = false;
 
@@ -112,8 +114,7 @@ export function Board() {
         filteredCandidates,
     } = useCandidateFilter(candidates);
 
-    // 컬럼별로 필터링 + order 정렬까지 끝낸 목록. Column 렌더링과 키보드 이동
-    // ("컬럼 끝에 삽입" 위치 계산) 둘 다 이 결과를 그대로 재사용한다.
+    // 컬럼별로 필터·정렬까지 끝낸 목록. Column과 키보드 이동이 공유한다.
     const candidatesByStage = useMemo(() => {
         const grouped: Record<StageId, Candidate[]> = {} as Record<
             StageId,
@@ -135,6 +136,7 @@ export function Board() {
     const dismissError = useCallback(() => setError(null), []);
     const closeDetail = useCallback(() => setSelectedCandidateId(null), []);
 
+    // 이웃 카드가 그사이 사라지거나 다른 단계로 옮겨졌는지 발신 직전에 재검증한다.
     const resolveIntent = useCallback(
         (candidateId: string, intent: MoveIntent): MoveIntent => {
             const isValid = (id: string | null) =>
@@ -164,6 +166,7 @@ export function Board() {
         [],
     );
 
+    // 카드 하나의 대기 중인 이동을 서버로 보내고, 그사이 쌓인 다음 의도를 이어서 처리한다.
     const flushMove = useCallback(
         async (candidateId: string) => {
             const state = moveStateRef.current.get(candidateId);
@@ -196,11 +199,7 @@ export function Board() {
                         stageId: updated.stageId,
                         order: updated.order,
                     };
-                    // 이 응답을 기다리는 동안 더 최신 의도가 이미 쌓였다면(state.pending이
-                    // 채워짐), 이 응답은 곧 대체될 낡은 결과다. 장부(state.confirmed)는
-                    // 갱신하되 화면은 건드리지 않는다 — 그리지 않으면 다음 반복이 최신
-                    // 의도를 마저 처리하고, 루프가 자연스럽게 끝나는 마지막 반복에서만
-                    // 화면이 갱신되어 낙관적 UI가 응답 도착 순서에 밀려나지 않는다.
+                    // 더 최신 의도가 이미 쌓여 있으면 이 응답은 낡은 결과이므로 화면엔 안 그린다.
                     if (!state.pending) {
                         writeCandidates(
                             candidatesRef.current.map((c) =>
@@ -310,6 +309,7 @@ export function Board() {
         [writeCandidates, syncMovingIds, flushMove],
     );
 
+    // 페이지 이탈 시 아직 안 보낸 이동을 keepalive 요청으로 흘려보낸다.
     useEffect(() => {
         const moveStates = moveStateRef.current;
 
@@ -365,6 +365,7 @@ export function Board() {
         moveHistory.length > 0 &&
         !movingIds.has(moveHistory[moveHistory.length - 1].candidateId);
 
+    // 마지막 이동을 스택에서 꺼내 그 이전 위치로 되돌린다.
     const handleUndo = useCallback(() => {
         const last = moveHistory[moveHistory.length - 1];
         if (!last || moveStateRef.current.has(last.candidateId)) return;

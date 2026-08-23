@@ -16,10 +16,12 @@ export function CandidateDetailPanel({
     const closeButtonRef = useRef<HTMLButtonElement>(null);
     const stage = STAGES.find((s) => s.id === candidate.stageId);
 
+    // 패널이 열리면 닫기 버튼으로 포커스를 옮긴다.
     useEffect(() => {
         closeButtonRef.current?.focus();
     }, [candidate.id]);
 
+    // Esc로도 닫을 수 있게 한다.
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
             if (event.key === "Escape") onClose();

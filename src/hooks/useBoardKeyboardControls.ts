@@ -31,12 +31,14 @@ const HANDLED_KEYS = new Set([
     ...STAGE_JUMP_KEYS,
 ]);
 
+// 검색창 등에 포커스가 있을 때는 보드 단축키를 무시하기 위한 판정.
 function isTypingTarget(target: EventTarget | null): boolean {
     if (!(target instanceof HTMLElement)) return false;
     const tag = target.tagName;
     return tag === "INPUT" || tag === "TEXTAREA" || target.isContentEditable;
 }
 
+// 키 입력을 해석만 하고 실제 이동/저장은 모르는 훅. 드래그앤드롭과 같은 액션 함수를 공유한다.
 export function useBoardKeyboardControls({
     candidatesByStage,
     onMoveToStage,
@@ -48,6 +50,7 @@ export function useBoardKeyboardControls({
         null,
     );
 
+    // 선택된 카드의 현재 스테이지/컬럼 내 인덱스를 찾는다.
     const locate = useCallback(
         (candidateId: string | null) => {
             if (!candidateId) return null;
@@ -61,6 +64,7 @@ export function useBoardKeyboardControls({
         [candidatesByStage],
     );
 
+    // 아무것도 선택 안 된 상태에서 방향키를 누르면 첫 번째 카드를 선택한다.
     const focusFirstAvailable = useCallback(() => {
         for (const stage of STAGES) {
             const list = candidatesByStage[stage.id] ?? [];
@@ -73,6 +77,7 @@ export function useBoardKeyboardControls({
 
     const focusedLocation = locate(focusedCandidateId);
 
+    // 선택 카드가 화면 밖으로 나가면 자동으로 스크롤을 따라간다.
     useEffect(() => {
         if (!focusedCandidateId) return;
         const el = document.querySelector(
@@ -89,6 +94,7 @@ export function useBoardKeyboardControls({
         focusedLocation?.cardIndex,
     ]);
 
+    // 보드 단축키 전체(방향키·q/e·숫자키·스페이스·Ctrl+Z)를 처리하는 keydown 리스너.
     useEffect(() => {
         if (!enabled) return;
 

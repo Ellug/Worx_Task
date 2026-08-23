@@ -19,8 +19,7 @@ export interface Candidate {
     skills: string[];
 }
 
-// 컬럼(스테이지) 내 정렬용 간격. 카드 사이에 끼워 넣을 때는 이 값의 절반씩
-// 좁혀가며 중간값을 계산한다 (자세한 재정렬 로직은 candidate-store.ts 참고).
+// 컬럼 내 정렬용 order 값의 기본 간격 (재정렬 로직은 candidate-store.ts 참고).
 export const ORDER_GAP = 1000;
 
 const FAMILY_NAMES = ["김", "이", "박", "최", "정", "강", "조", "윤", "장", "임"];
@@ -88,6 +87,7 @@ function formatAppliedAt(index: number) {
     return date.toISOString().slice(0, 10);
 }
 
+// 결정적으로(같은 count면 항상 같은 결과) 지원자 목업 데이터를 생성한다.
 export function createMockCandidates(count = MOCK_CANDIDATE_COUNT): Candidate[] {
     const normalizedCount = Math.max(0, Math.floor(count));
     const stageOrderCounters = Object.fromEntries(

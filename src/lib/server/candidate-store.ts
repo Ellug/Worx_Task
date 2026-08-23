@@ -2,10 +2,12 @@ import { INITIAL_CANDIDATES, ORDER_GAP, type Candidate } from "@/lib/candidates"
 import { computeOrderBetween } from "@/lib/order";
 import type { StageId } from "@/lib/stages";
 
+// Turbopack이 모듈을 여러 번 재평가해도 살아남는 싱글톤 저장소.
 declare global {
     var __candidateStore: Candidate[] | undefined;
 }
 
+// 스테이지별로 order를 깔끔한 간격(ORDER_GAP 배수)으로 재배정한다.
 function normalizeOrders(candidates: Candidate[]): void {
     const byStage = new Map<StageId, Candidate[]>();
 
@@ -27,6 +29,7 @@ function normalizeOrders(candidates: Candidate[]): void {
     }
 }
 
+// 특정 스테이지 하나만 order 충돌 시 재배정한다.
 function rebalanceStage(candidates: Candidate[], stageId: StageId): void {
     candidates
         .filter((candidate) => candidate.stageId === stageId)
@@ -36,6 +39,7 @@ function rebalanceStage(candidates: Candidate[], stageId: StageId): void {
         });
 }
 
+// 부팅 시 한 번만 시드 데이터로 초기화하고 이후엔 그대로 재사용한다.
 function getStore(): Candidate[] {
     if (
         !globalThis.__candidateStore ||
@@ -57,6 +61,7 @@ export function getCandidates(): Candidate[] {
         .map((candidate) => ({ ...candidate, skills: [...candidate.skills] }));
 }
 
+// 카드를 새 스테이지/순서로 옮긴다. order 충돌 시 그 스테이지만 재배정 후 재계산한다.
 export function reorderCandidate(
     id: string,
     stageId: StageId,

@@ -1,3 +1,4 @@
+// 과제 요구사항의 네트워크 지연(200~800ms)·실패율(15%) 시뮬레이션 값.
 const MIN_DELAY_MS = 200;
 const MAX_DELAY_MS = 800;
 const FAILURE_RATE = 0.15;
