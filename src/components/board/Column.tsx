@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type DragEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type DragEvent } from "react";
 import type { Candidate } from "@/lib/candidates";
 import { findStableNeighborId } from "@/lib/order";
 import { STAGE_DOT_TONE_CLASSNAME, type Stage } from "@/lib/stages";
@@ -28,6 +28,42 @@ export function Column({
     onDropCandidate,
 }: ColumnProps) {
     const [isDragOver, setIsDragOver] = useState(false);
+    const latestRef = useRef({ candidates, movingIds, onDropCandidate });
+    
+    useEffect(() => {
+        latestRef.current = { candidates, movingIds, onDropCandidate };
+    });
+
+    const handleDropRelative = useCallback(
+        (
+            draggedId: string,
+            targetId: string,
+            zone: "before" | "after",
+        ) => {
+            const {
+                candidates: list,
+                movingIds: busy,
+                onDropCandidate: drop,
+            } = latestRef.current;
+            const index = list.findIndex((c) => c.id === targetId);
+            if (index === -1) return;
+
+            if (zone === "before") {
+                drop(
+                    draggedId,
+                    findStableNeighborId(list, busy, index - 1, -1),
+                    targetId,
+                );
+            } else {
+                drop(
+                    draggedId,
+                    targetId,
+                    findStableNeighborId(list, busy, index + 1, 1),
+                );
+            }
+        },
+        [],
+    );
 
     const handleDragOver = (event: DragEvent<HTMLElement>) => {
         event.preventDefault();
@@ -75,27 +111,14 @@ export function Column({
             </header>
             <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-3">
                 {candidates.length > 0 ? (
-                    candidates.map((candidate, index) => (
+                    candidates.map((candidate) => (
                         <CandidateCard
                             key={candidate.id}
                             candidate={candidate}
                             isMoving={movingIds.has(candidate.id)}
                             isFocused={focusedCandidateId === candidate.id}
                             onOpenDetail={onOpenDetail}
-                            onDropBefore={(draggedId) =>
-                                onDropCandidate(
-                                    draggedId,
-                                    findStableNeighborId(candidates, movingIds, index - 1, -1),
-                                    candidate.id,
-                                )
-                            }
-                            onDropAfter={(draggedId) =>
-                                onDropCandidate(
-                                    draggedId,
-                                    candidate.id,
-                                    findStableNeighborId(candidates, movingIds, index + 1, 1),
-                                )
-                            }
+                            onDropRelative={handleDropRelative}
                         />
                     ))
                 ) : (

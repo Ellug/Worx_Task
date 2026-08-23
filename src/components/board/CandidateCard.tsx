@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type DragEvent } from "react";
+import { memo, useState, type DragEvent } from "react";
 import type { Candidate } from "@/lib/candidates";
 import { STAGES, STAGE_BADGE_TONE_CLASSNAME } from "@/lib/stages";
 
@@ -9,17 +9,19 @@ interface CandidateCardProps {
     isMoving?: boolean;
     isFocused?: boolean;
     onOpenDetail?: (candidateId: string) => void;
-    onDropBefore?: (draggedCandidateId: string) => void;
-    onDropAfter?: (draggedCandidateId: string) => void;
+    onDropRelative?: (
+        draggedCandidateId: string,
+        targetCandidateId: string,
+        zone: "before" | "after",
+    ) => void;
 }
 
-export function CandidateCard({
+function CandidateCardComponent({
     candidate,
     isMoving = false,
     isFocused = false,
     onOpenDetail,
-    onDropBefore,
-    onDropAfter,
+    onDropRelative,
 }: CandidateCardProps) {
     const stage = STAGES.find((s) => s.id === candidate.stageId);
     const [dropZone, setDropZone] = useState<"before" | "after" | null>(null);
@@ -53,11 +55,11 @@ export function CandidateCard({
         setDropZone(null);
         if (!draggedId || draggedId === candidate.id) return;
 
-        if (zone === "before") {
-            onDropBefore?.(draggedId);
-        } else {
-            onDropAfter?.(draggedId);
-        }
+        onDropRelative?.(
+            draggedId,
+            candidate.id,
+            zone === "before" ? "before" : "after",
+        );
     };
 
     return (
@@ -102,3 +104,5 @@ export function CandidateCard({
         </article>
     );
 }
+
+export const CandidateCard = memo(CandidateCardComponent);

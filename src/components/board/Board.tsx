@@ -15,8 +15,6 @@ import { Column } from "./Column";
 import { ErrorToast } from "./ErrorToast";
 import { FilterBar } from "./FilterBar";
 
-// 연속 입력이 끝났다고 판단하기까지 기다리는 시간. 이 시간 안에 같은 카드를 또
-// 옮기면 중간 위치는 서버로 보내지 않고 최종 위치 하나로 합쳐서 보낸다.
 const MOVE_DEBOUNCE_MS = 500;
 
 interface MoveHistoryEntry {
