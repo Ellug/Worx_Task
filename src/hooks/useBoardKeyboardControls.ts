@@ -32,11 +32,12 @@ const HANDLED_KEYS = new Set([
     ...STAGE_JUMP_KEYS,
 ]);
 
-// 검색창 등에 포커스가 있을 때는 보드 단축키를 무시하기 위한 판정.
-function isTypingTarget(target: EventTarget | null): boolean {
+// 검색창·버튼 등 자체 키 동작이 있는 요소에 포커스가 있으면 보드 단축키를 넘긴다.
+function isInteractiveTarget(target: EventTarget | null): boolean {
     if (!(target instanceof HTMLElement)) return false;
-    const tag = target.tagName;
-    return tag === "INPUT" || tag === "TEXTAREA" || target.isContentEditable;
+    if (target.isContentEditable) return true;
+    if (target.closest("[data-candidate-id]")) return false;
+    return ["INPUT", "TEXTAREA", "SELECT", "BUTTON", "A"].includes(target.tagName);
 }
 
 // 키 입력을 해석만 하고 실제 이동/저장은 모르는 훅. 드래그앤드롭과 같은 액션 함수를 공유한다.
@@ -65,20 +66,28 @@ export function useBoardKeyboardControls({
         [candidatesByStage],
     );
 
-    // 아무것도 선택 안 된 상태에서 방향키를 누르면 첫 번째 카드를 선택한다.
+    // 카드 DOM에 실제 포커스를 준다. 선택 상태는 곧 포커스이므로 이 함수가 곧 "선택".
+    const focusCard = useCallback((candidateId: string) => {
+        document
+            .querySelector<HTMLElement>(`[data-candidate-id="${candidateId}"]`)
+            ?.focus();
+    }, []);
+
+    // 아무 카드에도 포커스가 없을 때 방향키로 보드에 진입하는 경로.
     const focusFirstAvailable = useCallback(() => {
         for (const stage of STAGES) {
             const list = candidatesByStage[stage.id] ?? [];
             if (list.length > 0) {
-                setFocusedCandidateId(list[0].id);
+                focusCard(list[0].id);
                 return;
             }
         }
-    }, [candidatesByStage]);
+    }, [candidatesByStage, focusCard]);
 
     const focusedLocation = locate(focusedCandidateId);
 
-    // 선택 카드로 스크롤과 실제 DOM 포커스를 함께 옮긴다.
+    // 카드가 다른 컬럼으로 옮겨지면 React가 노드를 다시 만들어 포커스가 풀린다.
+    // 위치가 바뀌었을 때 스크롤을 따라가고, 포커스가 풀려 있었다면 되돌려준다.
     useEffect(() => {
         if (!focusedCandidateId) return;
         const el = document.querySelector<HTMLElement>(
@@ -92,7 +101,10 @@ export function useBoardKeyboardControls({
             behavior: "smooth",
         });
 
-        if (enabled && document.activeElement !== el) {
+        // 사용자가 의도적으로 다른 요소(버튼 등)로 포커스를 옮긴 경우에는 빼앗지 않는다.
+        const active = document.activeElement;
+        const focusWasLost = active === null || active === document.body;
+        if (enabled && focusWasLost) {
             el.focus({ preventScroll: true });
         }
     }, [
@@ -107,7 +119,7 @@ export function useBoardKeyboardControls({
         if (!enabled) return;
 
         const handleKeyDown = (event: KeyboardEvent) => {
-            if (isTypingTarget(event.target)) return;
+            if (isInteractiveTarget(event.target)) return;
 
             if (
                 (event.ctrlKey || event.metaKey) &&
@@ -122,7 +134,14 @@ export function useBoardKeyboardControls({
             const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
             if (!HANDLED_KEYS.has(key)) return;
 
-            const location = locate(focusedCandidateId);
+            // 조작 대상은 "지금 실제로 포커스된 카드"다.
+            const focusedEl =
+                event.target instanceof HTMLElement
+                    ? event.target.closest<HTMLElement>("[data-candidate-id]")
+                    : null;
+            const activeCardId = focusedEl?.dataset.candidateId ?? null;
+
+            const location = locate(activeCardId);
             if (!location) {
                 if (key.startsWith("Arrow")) {
                     event.preventDefault();
@@ -151,13 +170,13 @@ export function useBoardKeyboardControls({
                 case "ArrowUp":
                     event.preventDefault();
                     if (cardIndex > 0) {
-                        setFocusedCandidateId(currentList[cardIndex - 1].id);
+                        focusCard(currentList[cardIndex - 1].id);
                     }
                     break;
                 case "ArrowDown":
                     event.preventDefault();
                     if (cardIndex < currentList.length - 1) {
-                        setFocusedCandidateId(currentList[cardIndex + 1].id);
+                        focusCard(currentList[cardIndex + 1].id);
                     }
                     break;
                 case "ArrowLeft":
@@ -165,9 +184,7 @@ export function useBoardKeyboardControls({
                     for (let i = stageIndex - 1; i >= 0; i--) {
                         const list = candidatesByStage[STAGES[i].id] ?? [];
                         if (list.length > 0) {
-                            setFocusedCandidateId(
-                                list[Math.min(cardIndex, list.length - 1)].id,
-                            );
+                            focusCard(list[Math.min(cardIndex, list.length - 1)].id);
                             break;
                         }
                     }
@@ -177,9 +194,7 @@ export function useBoardKeyboardControls({
                     for (let i = stageIndex + 1; i < STAGES.length; i++) {
                         const list = candidatesByStage[STAGES[i].id] ?? [];
                         if (list.length > 0) {
-                            setFocusedCandidateId(
-                                list[Math.min(cardIndex, list.length - 1)].id,
-                            );
+                            focusCard(list[Math.min(cardIndex, list.length - 1)].id);
                             break;
                         }
                     }
@@ -212,9 +227,9 @@ export function useBoardKeyboardControls({
         return () => document.removeEventListener("keydown", handleKeyDown);
     }, [
         enabled,
-        focusedCandidateId,
         candidatesByStage,
         locate,
+        focusCard,
         focusFirstAvailable,
         onMoveToStage,
         onOpenDetail,

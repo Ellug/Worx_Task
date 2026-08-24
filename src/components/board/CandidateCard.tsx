@@ -7,7 +7,7 @@ import { STAGES, STAGE_BADGE_TONE_CLASSNAME } from "@/lib/stages";
 interface CandidateCardProps {
     candidate: Candidate;
     isMoving?: boolean;
-    isFocused?: boolean;
+    // 로빙 탭인덱스: 보드 전체에서 이 카드 하나만 Tab으로 진입 가능하다.
     isTabbable?: boolean;
     onFocusCandidate?: (candidateId: string) => void;
     onOpenDetail?: (candidateId: string) => void;
@@ -21,7 +21,6 @@ interface CandidateCardProps {
 function CandidateCardComponent({
     candidate,
     isMoving = false,
-    isFocused = false,
     isTabbable = false,
     onFocusCandidate,
     onOpenDetail,
@@ -77,16 +76,14 @@ function CandidateCardComponent({
             onDrop={handleDrop}
             onClick={() => onOpenDetail?.(candidate.id)}
             onFocus={() => onFocusCandidate?.(candidate.id)}
-            role="option"
-            aria-selected={isFocused}
+            tabIndex={isTabbable ? 0 : -1}
             aria-busy={isMoving}
             aria-label={`${candidate.name}, ${candidate.position}, ${stage?.name ?? ""}`}
-            tabIndex={isTabbable ? 0 : -1}
-            className={`rounded-md border border-zinc-200 bg-white p-3 shadow-sm transition-opacity dark:border-zinc-800 dark:bg-zinc-950 ${
+            className={`rounded-md border border-zinc-200 bg-white p-3 shadow-sm transition-opacity focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-1 dark:border-zinc-800 dark:bg-zinc-950 dark:focus:ring-offset-zinc-950 ${
                 isMoving ? "cursor-wait opacity-60" : "cursor-grab active:cursor-grabbing"
             } ${dropZone === "before" ? "border-t-2 border-t-blue-500" : ""} ${
                 dropZone === "after" ? "border-b-2 border-b-blue-500" : ""
-            } ${isFocused ? "ring-2 ring-yellow-400 ring-offset-1 dark:ring-offset-zinc-950" : ""}`}
+            }`}
         >
             <div className="flex items-start justify-between gap-2">
                 <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">

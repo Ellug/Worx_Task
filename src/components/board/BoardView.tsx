@@ -77,9 +77,18 @@ export function BoardView({
             enabled: !selectedCandidate,
         });
 
-    // 로빙 탭인덱스의 진입점. 아직 선택된 카드가 없으면 첫 카드가 Tab 대상이 된다.
+    // Tab으로 보드에 들어올 때의 진입점 하나. 마지막으로 포커스했던 카드가 필터로
+    // 사라졌으면 첫 카드로 넘겨, 진입 가능한 카드가 항상 하나는 있도록 한다.
     const tabbableCandidateId = useMemo(() => {
-        if (focusedCandidateId) return focusedCandidateId;
+        const isRendered =
+            focusedCandidateId !== null &&
+            STAGES.some((stage) =>
+                candidatesByStage[stage.id]?.some(
+                    (c) => c.id === focusedCandidateId,
+                ),
+            );
+        if (isRendered) return focusedCandidateId;
+
         for (const stage of STAGES) {
             const first = candidatesByStage[stage.id]?.[0];
             if (first) return first.id;
@@ -112,7 +121,6 @@ export function BoardView({
                             stage={stage}
                             candidates={candidatesByStage[stage.id] ?? []}
                             movingIds={movingIds}
-                            focusedCandidateId={focusedCandidateId}
                             tabbableCandidateId={tabbableCandidateId}
                             onFocusCandidate={setFocusedCandidateId}
                             onOpenDetail={setSelectedCandidateId}

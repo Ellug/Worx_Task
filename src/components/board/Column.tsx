@@ -10,7 +10,6 @@ interface ColumnProps {
     stage: Stage;
     candidates: Candidate[];
     movingIds: Set<string>;
-    focusedCandidateId: string | null;
     tabbableCandidateId: string | null;
     onFocusCandidate: (candidateId: string) => void;
     onOpenDetail: (candidateId: string) => void;
@@ -25,7 +24,6 @@ export function Column({
     stage,
     candidates,
     movingIds,
-    focusedCandidateId,
     tabbableCandidateId,
     onFocusCandidate,
     onOpenDetail,
@@ -116,12 +114,13 @@ export function Column({
                     {candidates.length}
                 </span>
             </header>
+            {/* tabIndex={-1}: 스크롤 가능한 영역은 브라우저가 Tab 대상에 자동 편입하는데,
+                여기에 포커스가 가면 카드가 아닌 곳에서 보드 단축키가 눌리게 되므로 명시적으로 제외처리. */}
             <div
-                role={candidates.length > 0 ? "listbox" : undefined}
-                aria-label={
-                    candidates.length > 0 ? `${stage.name} 지원자 목록` : undefined
-                }
-                className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-3"
+                tabIndex={-1}
+                role="list"
+                aria-label={`${stage.name} 지원자 목록`}
+                className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-3 focus:outline-none"
             >
                 {candidates.length > 0 ? (
                     candidates.map((candidate) => (
@@ -129,7 +128,6 @@ export function Column({
                             key={candidate.id}
                             candidate={candidate}
                             isMoving={movingIds.has(candidate.id)}
-                            isFocused={focusedCandidateId === candidate.id}
                             isTabbable={tabbableCandidateId === candidate.id}
                             onFocusCandidate={onFocusCandidate}
                             onOpenDetail={onOpenDetail}

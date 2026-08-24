@@ -154,15 +154,8 @@ export function CandidateDetailPanel({
                         <dt className="text-xs font-medium text-zinc-400 dark:text-zinc-600">
                             이력서
                         </dt>
-                        <dd className="mt-1">
-                            <a
-                                href={candidate.resumeUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-sm font-medium text-blue-600 underline underline-offset-2 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
-                            >
-                                이력서 보기 ↗
-                            </a>
+                        <dd className="mt-1 text-zinc-500 dark:text-zinc-500">
+                            이력서 파일 미등록
                         </dd>
                     </div>
                     <div>
