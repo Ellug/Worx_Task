@@ -738,3 +738,8 @@ PROMPTS.md, DECISIONS.md 를 repo 최상단에 배치할거야
 - `lint`·`tsc`·`build` 통과. Playwright 9종 검증(탭인덱스 1개, Tab 도달, `aria-selected` 1개, 포커스 동행, Enter 열기, 트랩 유지, Esc 후 복귀, live region 문구, 검색창 키 미유출) + 기존 회귀 6종·정밀 드롭 재통과
 
 ### 리뷰 / 검증
+- tab키 포커스 정상 작동 확인.
+- 방향키 이동 정상 작동 확인.
+- 스페이스바, 엔터로 상세 패널 작동 확인.
+- q e 로 카드 이동 및 컨트롤z로 undo 작동 확인
+
