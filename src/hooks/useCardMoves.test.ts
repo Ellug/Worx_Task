@@ -236,4 +236,41 @@ describe("useCardMoves - 연속 입력 병합과 undo", () => {
         // undo 자체가 다시 히스토리에 쌓이면 무한 왕복이 되므로 비어 있어야 한다.
         expect(h.result.current.canUndo).toBe(false);
     });
+
+    it("undo가 실패하면 기록이 남아 다시 시도할 수 있다", async () => {
+        const fetchMock = vi.fn();
+        vi.stubGlobal("fetch", fetchMock);
+
+        // 1) 원래 이동은 성공시켜 히스토리를 하나 만든다.
+        fetchMock.mockImplementation(mockFetchSuccess());
+        const h = setup([card("a", "document-review", 1000)]);
+
+        act(() => {
+            h.result.current.requestMove("a", "interview", null, null);
+        });
+        await flushDebounce();
+        expect(h.result.current.canUndo).toBe(true);
+
+        // 2) undo 요청만 실패시킨다.
+        fetchMock.mockImplementation(mockFetchFailure());
+        act(() => {
+            h.result.current.undo();
+        });
+        await flushDebounce();
+
+        // 되돌리기가 저장되지 않았으므로 카드는 옮겨진 자리에 그대로 있고,
+        // 기록도 남아 있어야 다시 시도할 수 있다.
+        expect(h.find("a").stageId).toBe("interview");
+        expect(h.result.current.canUndo).toBe(true);
+
+        // 3) 다시 시도하면 이번엔 성공해서 되돌아간다.
+        fetchMock.mockImplementation(mockFetchSuccess());
+        act(() => {
+            h.result.current.undo();
+        });
+        await flushDebounce();
+
+        expect(h.find("a").stageId).toBe("document-review");
+        expect(h.result.current.canUndo).toBe(false);
+    });
 });

@@ -35,6 +35,12 @@ interface StagePosition {
     order: number;
 }
 
+// 서버가 이동을 확정해줬을 때 히스토리에 할 일. 쌓는 것도 빼는 것도 확정 시점에만
+// 일어나야, 실패한 이동이 스택에 남거나 실패한 undo가 기록을 잃는 일이 없다.
+type HistoryAction =
+    | { mode: "push" }
+    | { mode: "pop"; target: MoveHistoryEntry };
+
 // 카드 한 장의 연속 이동 한 묶음(버스트) 상태.
 interface CardMoveState {
     pending: MoveIntent | null;     // 아직 서버로 보내지 않은 최종 목적지
@@ -42,7 +48,7 @@ interface CardMoveState {
     historyOrigin: StagePosition;   // 버스트 시작 전 위치
     confirmed: StagePosition;       // 서버가 마지막으로 확정해준 위치
     name: string;
-    recordHistory: boolean;         // undo 때문에 발생한 이동이면 false — 되돌리기가 다시 히스토리에 쌓이지 않게 한다.
+    historyAction: HistoryAction;
     timer: ReturnType<typeof setTimeout> | null;
 }
 
@@ -146,7 +152,8 @@ export function useCardMoves({
                     }
                 }
 
-                if (state.recordHistory) {
+                const action = state.historyAction;
+                if (action.mode === "push") {
                     setMoveHistory((prev) => [
                         ...prev,
                         {
@@ -155,6 +162,12 @@ export function useCardMoves({
                             previousOrder: state.historyOrigin.order,
                         },
                     ]);
+                } else {
+                    // 되돌리기가 실제로 저장된 뒤에야 기록을 뺀다. 그사이 다른 카드가
+                    // 새 기록을 쌓았을 수 있으므로 맨 끝이 아니라 그 항목만 지운다.
+                    setMoveHistory((prev) =>
+                        prev.filter((entry) => entry !== action.target),
+                    );
                 }
 
                 const settledStage = STAGES.find(
@@ -196,7 +209,7 @@ export function useCardMoves({
             nextStageId: StageId,
             beforeId: string | null,
             afterId: string | null,
-            recordHistory: boolean = true,
+            historyAction: HistoryAction = { mode: "push" },
         ) => {
             const current = candidatesRef.current.find((c) => c.id === candidateId);
             if (!current) return;
@@ -212,7 +225,7 @@ export function useCardMoves({
                     historyOrigin: { stageId: current.stageId, order: current.order },
                     confirmed: { stageId: current.stageId, order: current.order },
                     name: current.name,
-                    recordHistory,
+                    historyAction,
                     timer: null,
                 };
                 moveStateRef.current.set(candidateId, state);
@@ -324,14 +337,12 @@ export function useCardMoves({
             busyIds,
         );
 
-        setMoveHistory((prev) => prev.slice(0, -1));
-        requestMove(
-            last.candidateId,
-            last.previousStageId,
-            beforeId,
-            afterId,
-            false,
-        );
+        // 기록은 미리 빼지 않는다. 되돌리기가 서버에 저장된 뒤에 빼야, 실패했을 때
+        // 기록이 남아 다시 시도할 수 있다(쌓는 기준과 빼는 기준을 확정 시점으로 통일).
+        requestMove(last.candidateId, last.previousStageId, beforeId, afterId, {
+            mode: "pop",
+            target: last,
+        });
     }, [moveHistory, candidatesByStage, requestMove]);
 
     return {
