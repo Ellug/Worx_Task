@@ -743,3 +743,111 @@ PROMPTS.md, DECISIONS.md 를 repo 최상단에 배치할거야
 - 스페이스바, 엔터로 상세 패널 작동 확인.
 - q e 로 카드 이동 및 컨트롤z로 undo 작동 확인
 
+
+## [test] 핵심 로직 유닛 테스트 도입
+
+### 프롬프트 1 (CLAUDE CODE)
+> 테스트 진행해봐 근데 이건 내가 테스트코드 작성해본적이 없어서 상세설명이 좀 필요해보이네
+
+### AI 출력 요지
+- Next.js가 번들로 제공하는 공식 Vitest 가이드(`node_modules/next/dist/docs/01-app/02-guides/testing/vitest.md`)를 먼저 확인하고 그 구성을 따름
+- `vitest`·`@vitejs/plugin-react`·`jsdom`·`@testing-library/react`·`@testing-library/dom` 설치, `vitest.config.mts` 추가, `test`/`test:watch` 스크립트 등록
+- 가이드가 권장한 `vite-tsconfig-paths`는 실행 시 "Vite가 이제 네이티브로 지원한다"는 경고가 떠서, `resolve.tsconfigPaths: true`로 대체하고 의존성 제거
+- `src/lib/order.test.ts` (14개): `computeOrderBetween`의 중간값·빈 컬럼·맨앞/맨뒤 삽입·정밀도 소진 시 null, `findStableNeighborId`의 이동 중 카드 건너뛰기, `findNeighborsForOrder`의 앞뒤 이웃 탐색
+- `src/hooks/useCardMoves.test.ts` (7개): 요구사항이 지정한 낙관적 업데이트 롤백을 중심으로 — 응답 전 즉시 반영, 성공 시 서버 확정값 동기화, 실패 시 출발 지점 복귀 + 에러 노출, 실패한 이동이 undo 스택에 안 쌓임, 한 카드의 실패가 다른 카드의 성공을 되돌리지 않음, 연속 입력이 마지막 목적지 하나로 병합, undo 후 히스토리 비워짐
+- 훅 테스트는 `candidatesRef`/`writeCandidates`만 넘기는 하네스로 렌더링 없이 검증. 500ms 디바운스는 가짜 타이머로 건너뜀
+- 처음엔 `waitFor`가 가짜 타이머와 충돌해 6건이 타임아웃 → `advanceTimersByTimeAsync`로 타이머와 promise를 함께 진행시키는 방식으로 교체해 해결
+- 첫 작성한 정밀도 테스트가 실패했는데 원인이 코드가 아니라 테스트였음(JS에 없는 `Math.nextafter`를 쓴 탓). 같은 자리에 반복 삽입해 실제로 충돌에 도달하는지 보는 형태로 고침
+- 테스트가 실제로 버그를 잡는지 확인하려고 롤백 코드를 일부러 망가뜨려 실행 → 롤백 관련 3건만 정확히 실패하는 것을 보고 원복
+- `npm test` 21개 전부 통과(1.6초), `lint`·`tsc`·`build`도 통과
+
+### 리뷰 / 검증
+- 출력 로직 정독 검증
+  - 낙관적 업데이트 절차 논리적으로 의도와 같음을 확인.
+  - 실패시 롤백, 마지막 성공한 지점으로 논리 절차 확인.
+  - 마지막 명령만 전송하는 undo 의도 절차 확인.
+- 테스트 npm test 결과
+```
+  RUN  v4.1.11 C:/Users/ellug/Desktop/Worx_Task
+
+ ✓ src/lib/order.test.ts (14 tests) 4ms
+ ✓ src/hooks/useCardMoves.test.ts (7 tests) 22ms
+
+ Test Files  2 passed (2)
+      Tests  21 passed (21)
+   Start at  13:18:50
+   Duration  1.62s (transform 70ms, setup 0ms, import 264ms, tests 26ms, environment 2.52s)
+```
+- passed 확인
+- 추가 검증을 위해 `useCardMoves.ts`의 179라인의 롤백 줄을 고의로 망가트린 후 테스트 (해당 라인을 c로 수정)
+```
+ RUN  v4.1.11 C:/Users/ellug/Desktop/Worx_Task
+
+ ✓ src/lib/order.test.ts (14 tests) 4ms
+ ❯ src/hooks/useCardMoves.test.ts (7 tests | 3 failed) 27ms
+     ✓ 입력 즉시 화면 상태를 먼저 바꾼다(서버 응답 전) 11ms
+     ✓ 성공하면 서버가 확정한 값으로 동기화한다 3ms
+     × 저장에 실패하면 원래 위치로 되돌리고 에러를 노출한다 5ms
+     × 실패한 이동은 undo 스택에 쌓이지 않는다 2ms
+     × 한 카드의 실패가 다른 카드의 성공을 되돌리지 않는다 2ms
+     ✓ 연속 이동은 마지막 목적지 하나로 합쳐 한 번만 요청한다 1ms
+     ✓ 성공한 이동은 undo로 원래 단계에 되돌린다 1ms
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/hooks/useCardMoves.test.ts > useCardMoves - 실패 시 롤백 > 저장에 실패하면 원래 위치로 되돌리고 에러를 노출한다
+AssertionError: expected 'interview' to be 'document-review' // Object.is equality
+
+Expected: "document-review"
+Received: "interview"
+
+ ❯ src/hooks/useCardMoves.test.ts:140:37
+    138|
+    139|         // 실패 후에는 출발 지점으로 정확히 복귀해야 한다.
+    140|         expect(h.find("a").stageId).toBe("document-review");
+       |                                     ^
+    141|         expect(h.find("a").order).toBe(1000);
+    142|         expect(h.result.current.error).toContain("저장하지 못했습니다");
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/hooks/useCardMoves.test.ts > useCardMoves - 실패 시 롤백 > 실패한 이동은 undo 스택에 쌓이지 않는다
+AssertionError: expected 'interview' to be 'document-review' // Object.is equality
+
+Expected: "document-review"
+Received: "interview"
+
+ ❯ src/hooks/useCardMoves.test.ts:155:37
+    153|         await flushDebounce();
+    154|
+    155|         expect(h.find("a").stageId).toBe("document-review");
+       |                                     ^
+    156|         // 되돌릴 "성공한 이동"이 없으므로 undo는 비활성이어야 한다.
+    157|         expect(h.result.current.canUndo).toBe(false);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/hooks/useCardMoves.test.ts > useCardMoves - 실패 시 롤백 > 한 카드의실패가 다른 카드의 성공을 되돌리지 않는다
+AssertionError: expected 'interview' to be 'document-review' // Object.is equality
+
+Expected: "document-review"
+Received: "interview"
+
+ ❯ src/hooks/useCardMoves.test.ts:191:37
+    189|         await flushDebounce();
+    190|
+    191|         expect(h.find("b").stageId).toBe("document-review");
+       |                                     ^
+    192|         // b가 실패해 롤백되는 동안에도 a의 성공은 그대로 남아야 한다.
+    193|         expect(h.find("a").stageId).toBe("interview");
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  3 failed | 18 passed (21)
+   Start at  13:20:45
+   Duration  1.41s (transform 75ms, setup 0ms, import 244ms, tests 31ms, environment 2.14s)
+```
+- 실패 사례 로그 정상 출력 확인. 테스트 동작 검증 완료.
+- 검증 후 해당 라인 원복, 재실행하여 21건 전체 통과 확인
