@@ -127,7 +127,6 @@ export function Column({
                         <CandidateCard
                             key={candidate.id}
                             candidate={candidate}
-                            isMoving={movingIds.has(candidate.id)}
                             isTabbable={tabbableCandidateId === candidate.id}
                             onFocusCandidate={onFocusCandidate}
                             onOpenDetail={onOpenDetail}

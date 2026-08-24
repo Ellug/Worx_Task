@@ -6,7 +6,6 @@ import { STAGES, STAGE_BADGE_TONE_CLASSNAME } from "@/lib/stages";
 
 interface CandidateCardProps {
     candidate: Candidate;
-    isMoving?: boolean;
     // 로빙 탭인덱스: 보드 전체에서 이 카드 하나만 Tab으로 진입 가능하다.
     isTabbable?: boolean;
     onFocusCandidate?: (candidateId: string) => void;
@@ -20,7 +19,6 @@ interface CandidateCardProps {
 
 function CandidateCardComponent({
     candidate,
-    isMoving = false,
     isTabbable = false,
     onFocusCandidate,
     onOpenDetail,
@@ -36,7 +34,6 @@ function CandidateCardComponent({
 
     // 커서가 카드 상단/하단 절반 중 어디 있는지로 삽입 방향을 미리 보여준다.
     const handleDragOver = (event: DragEvent<HTMLElement>) => {
-        if (isMoving) return;
         event.preventDefault();
         event.stopPropagation();
         const rect = event.currentTarget.getBoundingClientRect();
@@ -45,13 +42,11 @@ function CandidateCardComponent({
     };
 
     const handleDragLeave = (event: DragEvent<HTMLElement>) => {
-        if (isMoving) return;
         event.stopPropagation();
         setDropZone(null);
     };
 
     const handleDrop = (event: DragEvent<HTMLElement>) => {
-        if (isMoving) return;
         event.preventDefault();
         event.stopPropagation();
         const draggedId = event.dataTransfer.getData("text/plain");
@@ -69,7 +64,7 @@ function CandidateCardComponent({
     return (
         <article
             data-candidate-id={candidate.id}
-            draggable={!isMoving}
+            draggable
             onDragStart={handleDragStart}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
@@ -77,11 +72,10 @@ function CandidateCardComponent({
             onClick={() => onOpenDetail?.(candidate.id)}
             onFocus={() => onFocusCandidate?.(candidate.id)}
             tabIndex={isTabbable ? 0 : -1}
-            aria-busy={isMoving}
             aria-label={`${candidate.name}, ${candidate.position}, ${stage?.name ?? ""}`}
-            className={`rounded-md border border-zinc-200 bg-white p-3 shadow-sm transition-opacity focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-1 dark:border-zinc-800 dark:bg-zinc-950 dark:focus:ring-offset-zinc-950 ${
-                isMoving ? "cursor-wait opacity-60" : "cursor-grab active:cursor-grabbing"
-            } ${dropZone === "before" ? "border-t-2 border-t-blue-500" : ""} ${
+            className={`cursor-grab rounded-md border border-zinc-200 bg-white p-3 shadow-sm transition-opacity focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-1 active:cursor-grabbing dark:border-zinc-800 dark:bg-zinc-950 dark:focus:ring-offset-zinc-950 ${
+                dropZone === "before" ? "border-t-2 border-t-blue-500" : ""
+            } ${
                 dropZone === "after" ? "border-b-2 border-b-blue-500" : ""
             }`}
         >
@@ -103,11 +97,6 @@ function CandidateCardComponent({
             <p className="mt-2 text-xs text-zinc-400 dark:text-zinc-600">
                 지원일 {candidate.appliedAt}
             </p>
-            {isMoving && (
-                <p className="mt-2 text-[11px] text-zinc-400 dark:text-zinc-600">
-                    저장 중…
-                </p>
-            )}
         </article>
     );
 }
