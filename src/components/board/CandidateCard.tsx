@@ -8,6 +8,8 @@ interface CandidateCardProps {
     candidate: Candidate;
     isMoving?: boolean;
     isFocused?: boolean;
+    isTabbable?: boolean;
+    onFocusCandidate?: (candidateId: string) => void;
     onOpenDetail?: (candidateId: string) => void;
     onDropRelative?: (
         draggedCandidateId: string,
@@ -20,6 +22,8 @@ function CandidateCardComponent({
     candidate,
     isMoving = false,
     isFocused = false,
+    isTabbable = false,
+    onFocusCandidate,
     onOpenDetail,
     onDropRelative,
 }: CandidateCardProps) {
@@ -72,7 +76,12 @@ function CandidateCardComponent({
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
             onClick={() => onOpenDetail?.(candidate.id)}
+            onFocus={() => onFocusCandidate?.(candidate.id)}
+            role="option"
+            aria-selected={isFocused}
             aria-busy={isMoving}
+            aria-label={`${candidate.name}, ${candidate.position}, ${stage?.name ?? ""}`}
+            tabIndex={isTabbable ? 0 : -1}
             className={`rounded-md border border-zinc-200 bg-white p-3 shadow-sm transition-opacity dark:border-zinc-800 dark:bg-zinc-950 ${
                 isMoving ? "cursor-wait opacity-60" : "cursor-grab active:cursor-grabbing"
             } ${dropZone === "before" ? "border-t-2 border-t-blue-500" : ""} ${

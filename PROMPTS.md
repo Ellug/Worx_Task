@@ -716,3 +716,25 @@ PROMPTS.md, DECISIONS.md 를 repo 최상단에 배치할거야
 
 ### 리뷰 / 검증
 - Board, BoardStatus, BoardView -> 의도와 동일한 구조로 분리 확인. 채택.
+
+
+## [keyboard-nav] 카드 포커스·스크린리더 접근성 보완
+
+### 프롬프트 1 (CLAUDE CODE)
+> 접근성 마저 처리하자.
+> 지금 노란 테두리로 선택 표시는 되는데 그게 실제 브라우저 포커스랑 따로 노는 거 같은데, Tab으로는 카드에 아예 접근이 안 되고 스크린리더도 뭐가 선택됐는지 못 읽을 거 같거든.
+> 상세 패널도 열었을 때 Tab이 뒤쪽 보드로 새는지 확인하고, 닫으면 원래 카드로 포커스 돌아오게 해.
+> 카드 이동 성공했을 때도 화면으로만 알 수 있고 소리로는 아무것도 안 나오는 것도 같이 봐줘.
+> 기존 단축키 동작이랑 충돌 안 나게 하는 게 제일 중요하고, 끝나고 회귀 검증 돌려
+
+### AI 출력 요지
+- 로빙 탭인덱스 도입: 보드 전체에서 카드 1장만 `tabIndex=0`, 나머지는 `-1`. Tab으로 보드 진입 후 방향키로 이동
+- 카드에 `role="option"`·`aria-selected`·`aria-label`(이름/직무/단계), 컬럼 목록에 `role="listbox"` 부여
+- 방향키 이동 시 `focus()`를 함께 호출하고 카드 `onFocus`로 선택 상태를 되돌려 받아, 커스텀 선택 표시와 DOM 포커스를 일치시킴
+- 상세 패널에 Tab 순환 트랩 추가(기존에는 실제로 뒤쪽 보드로 빠져나갔음). 닫힌 뒤 포커스 복귀는 패널과 훅이 경합하지 않도록 훅 한 곳에서만 처리
+- Enter로도 상세 열기 추가. 카드에 개별 `onKeyDown`을 붙이면 전역 핸들러와 이중 발화하므로 입력 해석은 기존대로 `useBoardKeyboardControls`에 유지
+- 이동 성공을 `aria-live="polite"`(sr-only)로 안내. 실패는 기존 `ErrorToast`의 `role="alert"`가 담당
+- 미사용 export `MOCK_CANDIDATES` 제거
+- `lint`·`tsc`·`build` 통과. Playwright 9종 검증(탭인덱스 1개, Tab 도달, `aria-selected` 1개, 포커스 동행, Enter 열기, 트랩 유지, Esc 후 복귀, live region 문구, 검색창 키 미유출) + 기존 회귀 6종·정밀 드롭 재통과
+
+### 리뷰 / 검증

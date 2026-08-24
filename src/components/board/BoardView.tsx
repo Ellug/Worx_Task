@@ -49,6 +49,7 @@ export function BoardView({
     const {
         movingIds,
         error,
+        statusMessage,
         dismissError,
         requestMove,
         moveCandidateToStage,
@@ -67,13 +68,24 @@ export function BoardView({
 
     const closeDetail = useCallback(() => setSelectedCandidateId(null), []);
 
-    const { focusedCandidateId } = useBoardKeyboardControls({
-        candidatesByStage,
-        onMoveToStage: moveCandidateToStage,
-        onOpenDetail: setSelectedCandidateId,
-        onUndo: undo,
-        enabled: !selectedCandidate,
-    });
+    const { focusedCandidateId, setFocusedCandidateId } =
+        useBoardKeyboardControls({
+            candidatesByStage,
+            onMoveToStage: moveCandidateToStage,
+            onOpenDetail: setSelectedCandidateId,
+            onUndo: undo,
+            enabled: !selectedCandidate,
+        });
+
+    // 로빙 탭인덱스의 진입점. 아직 선택된 카드가 없으면 첫 카드가 Tab 대상이 된다.
+    const tabbableCandidateId = useMemo(() => {
+        if (focusedCandidateId) return focusedCandidateId;
+        for (const stage of STAGES) {
+            const first = candidatesByStage[stage.id]?.[0];
+            if (first) return first.id;
+        }
+        return null;
+    }, [focusedCandidateId, candidatesByStage]);
 
     return (
         <div className="flex h-full flex-col">
@@ -101,6 +113,8 @@ export function BoardView({
                             candidates={candidatesByStage[stage.id] ?? []}
                             movingIds={movingIds}
                             focusedCandidateId={focusedCandidateId}
+                            tabbableCandidateId={tabbableCandidateId}
+                            onFocusCandidate={setFocusedCandidateId}
                             onOpenDetail={setSelectedCandidateId}
                             onDropCandidate={(candidateId, beforeId, afterId) =>
                                 requestMove(candidateId, stage.id, beforeId, afterId)
@@ -109,6 +123,9 @@ export function BoardView({
                     ))}
                 </div>
                 {error && <ErrorToast message={error} onDismiss={dismissError} />}
+                <p aria-live="polite" className="sr-only">
+                    {statusMessage}
+                </p>
             </div>
             {selectedCandidate && (
                 <CandidateDetailPanel

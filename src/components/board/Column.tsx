@@ -11,6 +11,8 @@ interface ColumnProps {
     candidates: Candidate[];
     movingIds: Set<string>;
     focusedCandidateId: string | null;
+    tabbableCandidateId: string | null;
+    onFocusCandidate: (candidateId: string) => void;
     onOpenDetail: (candidateId: string) => void;
     onDropCandidate: (
         candidateId: string,
@@ -24,6 +26,8 @@ export function Column({
     candidates,
     movingIds,
     focusedCandidateId,
+    tabbableCandidateId,
+    onFocusCandidate,
     onOpenDetail,
     onDropCandidate,
 }: ColumnProps) {
@@ -112,7 +116,13 @@ export function Column({
                     {candidates.length}
                 </span>
             </header>
-            <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-3">
+            <div
+                role={candidates.length > 0 ? "listbox" : undefined}
+                aria-label={
+                    candidates.length > 0 ? `${stage.name} 지원자 목록` : undefined
+                }
+                className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-3"
+            >
                 {candidates.length > 0 ? (
                     candidates.map((candidate) => (
                         <CandidateCard
@@ -120,6 +130,8 @@ export function Column({
                             candidate={candidate}
                             isMoving={movingIds.has(candidate.id)}
                             isFocused={focusedCandidateId === candidate.id}
+                            isTabbable={tabbableCandidateId === candidate.id}
+                            onFocusCandidate={onFocusCandidate}
                             onOpenDetail={onOpenDetail}
                             onDropRelative={handleDropRelative}
                         />

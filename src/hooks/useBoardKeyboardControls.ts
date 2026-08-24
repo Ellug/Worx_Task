@@ -28,6 +28,7 @@ const HANDLED_KEYS = new Set([
     "q",
     "e",
     " ",
+    "Enter",
     ...STAGE_JUMP_KEYS,
 ]);
 
@@ -77,18 +78,25 @@ export function useBoardKeyboardControls({
 
     const focusedLocation = locate(focusedCandidateId);
 
-    // 선택 카드가 화면 밖으로 나가면 자동으로 스크롤을 따라간다.
+    // 선택 카드로 스크롤과 실제 DOM 포커스를 함께 옮긴다.
     useEffect(() => {
         if (!focusedCandidateId) return;
-        const el = document.querySelector(
+        const el = document.querySelector<HTMLElement>(
             `[data-candidate-id="${focusedCandidateId}"]`,
         );
-        el?.scrollIntoView({
+        if (!el) return;
+
+        el.scrollIntoView({
             block: "nearest",
             inline: "nearest",
             behavior: "smooth",
         });
+
+        if (enabled && document.activeElement !== el) {
+            el.focus({ preventScroll: true });
+        }
     }, [
+        enabled,
         focusedCandidateId,
         focusedLocation?.stageIndex,
         focusedLocation?.cardIndex,
@@ -193,6 +201,7 @@ export function useBoardKeyboardControls({
                     );
                     break;
                 case " ":
+                case "Enter":
                     event.preventDefault();
                     onOpenDetail(currentList[cardIndex].id);
                     break;
@@ -212,5 +221,5 @@ export function useBoardKeyboardControls({
         onUndo,
     ]);
 
-    return { focusedCandidateId };
+    return { focusedCandidateId, setFocusedCandidateId };
 }

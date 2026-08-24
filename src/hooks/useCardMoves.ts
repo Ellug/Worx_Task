@@ -13,7 +13,7 @@ import {
     findNeighborsForOrder,
     findStableNeighborId,
 } from "@/lib/order";
-import type { StageId } from "@/lib/stages";
+import { STAGES, type StageId } from "@/lib/stages";
 
 // 연속 이동을 하나로 합치기 위한 디바운스 대기 시간.
 const MOVE_DEBOUNCE_MS = 500;
@@ -60,6 +60,8 @@ export function useCardMoves({
 }: UseCardMovesOptions) {
     const [movingIds, setMovingIds] = useState<Set<string>>(new Set());
     const [error, setError] = useState<string | null>(null);
+    // 이동 성공을 스크린리더에 알리기 위한 문구(실패는 ErrorToast의 role="alert"가 담당).
+    const [statusMessage, setStatusMessage] = useState("");
     const [moveHistory, setMoveHistory] = useState<MoveHistoryEntry[]>([]);
 
     const moveStateRef = useRef<Map<string, CardMoveState>>(new Map());
@@ -154,6 +156,13 @@ export function useCardMoves({
                         },
                     ]);
                 }
+
+                const settledStage = STAGES.find(
+                    (s) => s.id === state.confirmed.stageId,
+                );
+                setStatusMessage(
+                    `${state.name}님을 ${settledStage?.name ?? ""} 단계로 이동했습니다.`,
+                );
 
                 moveStateRef.current.delete(candidateId);
                 syncMovingIds();
@@ -328,6 +337,7 @@ export function useCardMoves({
     return {
         movingIds,
         error,
+        statusMessage,
         dismissError,
         requestMove,
         moveCandidateToStage,

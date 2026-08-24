@@ -14,17 +14,40 @@ export function CandidateDetailPanel({
     onClose,
 }: CandidateDetailPanelProps) {
     const closeButtonRef = useRef<HTMLButtonElement>(null);
+    const panelRef = useRef<HTMLElement>(null);
     const stage = STAGES.find((s) => s.id === candidate.stageId);
 
     // 패널이 열리면 닫기 버튼으로 포커스를 옮긴다.
+    // (닫힌 뒤 원래 카드로 돌아가는 것은 useBoardKeyboardControls가 처리한다.)
     useEffect(() => {
         closeButtonRef.current?.focus();
     }, [candidate.id]);
 
-    // Esc로도 닫을 수 있게 한다.
+    // Esc로 닫고, Tab은 패널 안에서만 순환하도록 가둔다.
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
-            if (event.key === "Escape") onClose();
+            if (event.key === "Escape") {
+                onClose();
+                return;
+            }
+            if (event.key !== "Tab") return;
+
+            const focusables = panelRef.current?.querySelectorAll<HTMLElement>(
+                'a[href], button:not([disabled]), input, select, textarea, [tabindex]:not([tabindex="-1"])',
+            );
+            if (!focusables || focusables.length === 0) return;
+
+            const first = focusables[0];
+            const last = focusables[focusables.length - 1];
+            const active = document.activeElement;
+
+            if (event.shiftKey && active === first) {
+                event.preventDefault();
+                last.focus();
+            } else if (!event.shiftKey && active === last) {
+                event.preventDefault();
+                first.focus();
+            }
         };
         document.addEventListener("keydown", handleKeyDown);
         return () => document.removeEventListener("keydown", handleKeyDown);
@@ -38,6 +61,7 @@ export function CandidateDetailPanel({
                 className="fixed inset-0 z-40 bg-black/30"
             />
             <aside
+                ref={panelRef}
                 role="dialog"
                 aria-modal="true"
                 aria-label={`${candidate.name} 상세 정보`}

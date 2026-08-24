@@ -131,4 +131,3 @@ export function createMockCandidates(count = MOCK_CANDIDATE_COUNT): Candidate[] 
 }
 
 export const INITIAL_CANDIDATES = createMockCandidates();
-export const MOCK_CANDIDATES = INITIAL_CANDIDATES;
