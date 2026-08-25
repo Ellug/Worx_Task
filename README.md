@@ -19,6 +19,27 @@ npm run dev
 
 [http://localhost:3000](http://localhost:3000) 에서 확인합니다.
 
+## 테스트
+
+```bash
+npm test
+```
+
+순서 계산(`computeOrderBetween`, 정렬 기준점 탐색)과 카드 이동 엔진(낙관적 업데이트, 실패 롤백, 연속 입력 병합, undo)을 UI 없이 검증합니다.
+
+## Mock API
+
+실제 서버 대신 Next.js Route Handler로 직접 구현했습니다.
+
+| 엔드포인트 | 동작 |
+| --- | --- |
+| `GET /api/candidates` | 전체 지원자 목록 조회 |
+| `PATCH /api/candidates/[id]` | 카드를 `beforeId`/`afterId` 사이로 옮기고 단계·순서 저장 |
+
+- 과제 조건에 맞춰 모든 요청에 **200~800ms 지연**과 **15% 실패율**을 적용합니다.
+- 카드 순서는 인덱스가 아니라 `order` 값으로 관리하며, 두 이웃의 중간값을 계산해 삽입합니다. 더 쪼갤 수 없으면 해당 단계만 재배정합니다.
+- 데이터는 전역 싱글톤으로 보관합니다. 새로고침해도 유지되지만 개발 서버를 재시작하면 초기 상태로 돌아갑니다.
+
 ## 배포
 
 [https://worx-task.vercel.app/](https://worx-task.vercel.app/)
